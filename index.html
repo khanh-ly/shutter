@@ -1,0 +1,87 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=1920, height=1080">
+  <title>Shutter</title>
+  <link rel="stylesheet" href="css/style.css">
+</head>
+<body>
+  <div id="stage">
+    <div class="slide" id="slideA"><canvas class="bg"></canvas><div class="mover"><img class="photo" alt=""></div></div>
+    <div class="slide" id="slideB"><canvas class="bg"></canvas><div class="mover"><img class="photo" alt=""></div></div>
+  </div>
+
+  <div id="overlay">
+    <div id="caption"><div id="caption-date"></div><div id="caption-sub"></div></div>
+    <div id="clock"></div>
+  </div>
+
+  <!-- Photo details, shown with ▲ / Info. -->
+  <div id="photo-info">
+    <div id="info-date"></div>
+    <div id="info-source"></div>
+    <div id="info-file"></div>
+    <div id="info-position"></div>
+  </div>
+
+  <div id="toast"></div>
+
+  <div id="message" class="hidden">
+    <svg class="spinner" viewBox="0 0 50 50" aria-hidden="true"><circle cx="25" cy="25" r="20"></circle></svg>
+    <h1 id="message-title"></h1>
+    <p id="message-body"></p>
+  </div>
+
+  <div id="albums" class="hidden">
+    <div id="albums-grid"><div id="albums-track"></div></div>
+    <div id="albums-loading" class="hidden"><svg class="spinner" viewBox="0 0 50 50" aria-hidden="true"><circle cx="25" cy="25" r="20"></circle></svg></div>
+    <!-- Floats over the grid: covers scroll underneath it. -->
+    <div class="albums-header">
+      <div class="header-frost-clip"><canvas class="header-frost"></canvas></div>
+      <div class="header-tint"></div>
+      <div class="header-left">
+        <h1>Albums</h1>
+        <div id="albums-status"></div>
+      </div>
+      <div class="header-right">
+        <div id="albums-settings" class="settings-btn">
+          <svg viewBox="0 0 24 24" width="34" height="34" aria-hidden="true"><path fill="currentColor" d="M19.14 12.94c.04-.3.06-.61.06-.94 0-.32-.02-.64-.07-.94l2.03-1.58a.49.49 0 0 0 .12-.61l-1.92-3.32a.49.49 0 0 0-.59-.22l-2.39.96c-.5-.38-1.03-.7-1.62-.94l-.36-2.54a.48.48 0 0 0-.48-.41h-3.84c-.24 0-.43.17-.47.41l-.36 2.54c-.59.24-1.13.57-1.62.94l-2.39-.96a.49.49 0 0 0-.59.22L2.74 8.87c-.12.21-.08.47.12.61l2.03 1.58c-.05.3-.09.63-.09.94s.02.64.07.94l-2.03 1.58a.49.49 0 0 0-.12.61l1.92 3.32c.12.22.37.29.59.22l2.39-.96c.5.38 1.03.7 1.62.94l.36 2.54c.05.24.24.41.48.41h3.84c.24 0 .44-.17.47-.41l.36-2.54c.59-.24 1.13-.56 1.62-.94l2.39.96c.22.08.47 0 .59-.22l1.92-3.32c.12-.22.07-.47-.12-.61l-2.01-1.58zM12 15.6c-1.98 0-3.6-1.62-3.6-3.6s1.62-3.6 3.6-3.6 3.6 1.62 3.6 3.6-1.62 3.6-3.6 3.6z"/></svg>
+          <span>Settings</span>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <div id="settings" class="hidden">
+    <h1 class="settings-title">Settings</h1>
+    <div class="settings-body">
+      <div class="settings-left">
+        <div id="settings-cats"></div>
+        <div id="settings-save" class="settings-save">Save &amp; start slideshow</div>
+      </div>
+      <div class="settings-right">
+        <div id="settings-rows"></div>
+        <div id="settings-status"></div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Asked before leaving the app (Back on the album grid). -->
+  <div id="exit-dialog" class="hidden">
+    <div class="dialog">
+      <h2>Do you want to exit Shutter?</h2>
+      <div class="dialog-buttons">
+        <div class="dialog-btn" data-action="cancel">Cancel</div>
+        <div class="dialog-btn" data-action="exit">Exit</div>
+      </div>
+    </div>
+  </div>
+
+  <script src="js/config.js"></script>
+  <script src="js/synology.js"></script>
+  <script src="js/settings.js"></script>
+  <script src="js/albums.js"></script>
+  <script src="js/app.js"></script>
+</body>
+</html>

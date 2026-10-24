@@ -1,0 +1,187 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Sign-in Test</title>
+<style>
+  :root { --bg: #fff; --fg: #1a1a1a; --muted: #666; --line: #ddd; --ok: #1a7f37; --bad: #c62828; --accent: #2f6fde; }
+  @media (prefers-color-scheme: dark) { :root { --bg: #15171c; --fg: #eee; --muted: #9aa; --line: #333; --ok: #6fd08c; --bad: #ff8a80; } }
+  body { margin: 0; padding: 24px 16px; background: var(--bg); color: var(--fg); font: 16px/1.5 -apple-system, Helvetica, Arial, sans-serif; }
+  main { max-width: 640px; margin: 0 auto; }
+  h1 { font-size: 22px; margin: 0 0 4px; }
+  p { color: var(--muted); margin: 0 0 16px; }
+  label { display: block; font-size: 14px; color: var(--muted); margin-top: 12px; }
+  input { width: 100%; box-sizing: border-box; padding: 8px 10px; font: inherit; color: var(--fg); background: transparent; border: 1px solid var(--line); border-radius: 6px; }
+  button { margin-top: 16px; padding: 8px 18px; font: inherit; color: #fff; background: var(--accent); border: 0; border-radius: 6px; cursor: pointer; }
+  button:disabled { opacity: 0.5; }
+  table { width: 100%; border-collapse: collapse; margin-top: 20px; font-size: 14px; }
+  td { padding: 6px 4px; border-top: 1px solid var(--line); vertical-align: top; }
+  .ok { color: var(--ok); font-weight: 600; }
+  .bad { color: var(--bad); }
+</style>
+</head>
+<body>
+<main>
+  <h1>Synology sign-in test</h1>
+  <p>Signs in to the NAS the way the DSM page does (through this dev server), checks what that session can read, including each album and how it's shared, then signs out. Shows only result codes, never passwords or passphrases.</p>
+  <label for="account">Username</label>
+  <input id="account" autocomplete="off">
+  <label for="passwd">Password</label>
+  <input id="passwd" type="password" autocomplete="off">
+  <button id="run">Run test</button>
+  <table id="out"></table>
+</main>
+<script>
+  // Earlier run: every session=SynologyPhotos variant got 402; this one signed in.
+  var variants = [
+    { name: 'Sign in: POST, v7, session=webui', method: 'POST', p: { version: 7, session: 'webui', format: 'sid', enable_syno_token: 'yes' } }
+  ];
+  var checks = [
+    { name: 'List photos (all my photos)', p: { api: 'SYNO.Foto.Browse.Item', version: 1, method: 'list', offset: 0, limit: 1 } },
+    { name: 'List Shared Space photos', p: { api: 'SYNO.FotoTeam.Browse.Item', version: 1, method: 'list', offset: 0, limit: 1 } }
+  ];
+
+  function call(params, sid, token) {
+    return fetch('/webapi/entry.cgi?' + body(Object.assign({}, params, { _sid: sid, SynoToken: token || '' })))
+      .then(function (r) { return r.json(); });
+  }
+
+  function check(c, sid, token) {
+    return call(c.p, sid, token).then(function (res) {
+      if (!res.success) return { ok: false, text: 'Error ' + (res.error && res.error.code) };
+      var n = (res.data.list || []).length;
+      return { ok: true, text: 'Works (' + n + ' returned)' };
+    }, function (e) { return { ok: false, text: 'Request failed: ' + e.message }; });
+  }
+
+  // For each album the account sees: how it's shared, and which way of listing its photos works.
+  // Shows codes and yes/no only, never the album's passphrase.
+  function albumReport(sid, token, addRow) {
+    var base = { api: 'SYNO.Foto.Browse.Album', method: 'list', offset: 0, limit: 100 };
+    var listings = [
+      ['Albums: v2, shared-with-me, thumbnail (app today)', { version: 2, category: 'normal_share_with_me', additional: '["thumbnail"]' }],
+      ['Albums: v2, shared-with-me', { version: 2, category: 'normal_share_with_me' }],
+      ['Albums: v2, category normal', { version: 2, category: 'normal' }],
+      ['Albums: v1, thumbnail (app fallback)', { version: 1, additional: '["thumbnail"]' }],
+      ['Albums: v1', { version: 1 }]
+    ];
+    var albums = null;
+    var k = 0;
+    return (function nextListing() {
+      if (k >= listings.length) return Promise.resolve();
+      var l = listings[k++];
+      return call(Object.assign({}, base, l[1]), sid, token).then(function (res) {
+        if (res.success) {
+          addRow(l[0], 'OK (' + (res.data.list || []).length + ' albums)', true);
+          if (!albums) albums = res.data.list || [];
+        } else {
+          addRow(l[0], 'Error ' + (res.error && res.error.code), false);
+        }
+      }, function () { addRow(l[0], 'Request failed', false); }).then(nextListing);
+    })().then(function () {
+      if (!albums) return;
+      addRow('Albums found', String(albums.length), true);
+      var i = 0;
+      return (function next() {
+        if (i >= albums.length) return;
+        var a = albums[i++];
+        var item = { api: 'SYNO.Foto.Browse.Item', version: 1, method: 'list', offset: 0, limit: 1 };
+        var tries = [
+          ['album_id + passphrase (app today)', Object.assign({ album_id: a.id, passphrase: a.passphrase || '' }, item)],
+          ['passphrase only', Object.assign({ passphrase: a.passphrase || '' }, item)],
+          ['album_id only', Object.assign({ album_id: a.id }, item)]
+        ];
+        var results = [];
+        var j = 0;
+        return (function nextTry() {
+          if (j >= tries.length) {
+            addRow('“' + a.name + '” · type ' + a.type + ' · owner ' + a.owner_user_id + ' · shared ' + a.shared +
+              ' · passphrase ' + (a.passphrase ? 'yes' : 'no') + ' · items ' + a.item_count, results.join(' | '), true);
+            return next();
+          }
+          var t = tries[j++];
+          var p = {};
+          Object.keys(t[1]).forEach(function (k) { if (t[1][k] !== '') p[k] = t[1][k]; });
+          return call(p, sid, token).then(function (r) {
+            results.push(t[0] + ': ' + (r.success ? 'OK (' + (r.data.list || []).length + ')' : 'Error ' + (r.error && r.error.code)));
+          }, function (e) { results.push(t[0] + ': failed'); }).then(nextTry);
+        })();
+      })();
+    });
+  }
+
+  function body(params) {
+    return Object.keys(params).map(function (k) { return encodeURIComponent(k) + '=' + encodeURIComponent(params[k]); }).join('&');
+  }
+
+  function attempt(v, account, passwd) {
+    var params = Object.assign({ api: 'SYNO.API.Auth', method: 'login', account: account, passwd: passwd }, v.p);
+    var req = v.method === 'GET'
+      ? fetch('/webapi/entry.cgi?' + body(params))
+      : fetch('/webapi/entry.cgi', { method: 'POST', headers: { 'Content-Type': 'application/x-www-form-urlencoded' }, body: body(params) });
+    return req.then(function (r) { return r.json(); }).then(function (res) {
+      if (res.success && res.data && res.data.sid) return { ok: true, text: 'Signed in', sid: res.data.sid, token: res.data.synotoken, session: v.p.session };
+      return { ok: false, text: 'Error ' + (res.error && res.error.code) };
+    }, function (e) { return { ok: false, text: 'Request failed: ' + e.message }; });
+  }
+
+  // Opened as a file, requests to /webapi/ can't reach the NAS.
+  if (location.protocol === 'file:') {
+    var warn = document.createElement('p');
+    warn.className = 'bad';
+    warn.textContent = 'Open this page through the dev server instead: run "python3 dev/mock_server.py --port 8082 --proxy http://<NAS>:5000" and go to http://localhost:8082/dev/login-test.html';
+    document.querySelector('main').insertBefore(warn, document.getElementById('out'));
+    document.getElementById('run').disabled = true;
+  }
+
+  document.getElementById('run').addEventListener('click', function () {
+    var btn = this, out = document.getElementById('out');
+    var account = document.getElementById('account').value.trim();
+    var passwd = document.getElementById('passwd').value;
+    out.innerHTML = '';
+    btn.disabled = true;
+    var i = 0;
+    (function next() {
+      if (i >= variants.length) { btn.disabled = false; return; }
+      var v = variants[i++];
+      attempt(v, account, passwd).then(function (r) {
+        var tr = out.insertRow();
+        tr.insertCell().textContent = v.name;
+        var c = tr.insertCell();
+        c.textContent = r.text;
+        c.className = r.ok ? 'ok' : 'bad';
+        if (!r.ok) return next();
+        var j = 0;
+        function addRow(name, text, ok) {
+          var row = out.insertRow();
+          row.insertCell().textContent = name;
+          var cell = row.insertCell();
+          cell.textContent = text;
+          cell.className = ok ? 'ok' : 'bad';
+        }
+        (function nextCheck() {
+          if (j >= checks.length) {
+            albumReport(r.sid, r.token, addRow).then(function () {
+              // Don't leave the session open.
+              fetch('/webapi/entry.cgi?' + body({ api: 'SYNO.API.Auth', version: 7, method: 'logout', session: r.session, _sid: r.sid }));
+              btn.disabled = false;
+            });
+            return;
+          }
+          var ch = checks[j++];
+          check(ch, r.sid, r.token).then(function (cr) {
+            var row = out.insertRow();
+            row.insertCell().textContent = ch.name;
+            var cell = row.insertCell();
+            cell.textContent = cr.text;
+            cell.className = cr.ok ? 'ok' : 'bad';
+            nextCheck();
+          });
+        })();
+      });
+    })();
+  });
+</script>
+</body>
+</html>

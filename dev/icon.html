@@ -1,0 +1,85 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<title>Shutter icon</title>
+<style>
+  body { margin: 0; padding: 32px; background: #222; color: #ddd; font: 16px/1.5 -apple-system, Helvetica, Arial, sans-serif; }
+  img { display: block; margin: 0 0 16px; }
+  a { color: #8ab4ff; }
+</style>
+</head>
+<body>
+<!--
+  Draws the app's launcher icon (icon.png, 512x423, the Samsung TV icon size):
+  a six-blade shutter on the app's button blue, with "Shutter" below.
+  Open this page in a browser and use the download link to save icon.png.
+-->
+<img id="preview" width="512" height="423" alt="Shutter icon">
+<a id="download" download="icon.png">Download icon.png</a>
+<script>
+  var BLUE = '#2f6fde';
+
+  // White six-blade shutter on transparent: a disc with a hexagonal opening and six
+  // straight gaps running from the opening's corners. Drawn at 4x, then its corners
+  // are rounded by blurring and re-thresholding the alpha.
+  function shutter(size) {
+    var S = size * 4, c = document.createElement('canvas');
+    c.width = c.height = S;
+    var x = c.getContext('2d');
+    var cx = S / 2, R = S * 0.46, r = R * 0.36, gap = R * 0.10, turn = -Math.PI / 2 + Math.PI / 12;
+    x.fillStyle = '#fff';
+    x.beginPath(); x.arc(cx, cx, R, 0, Math.PI * 2); x.fill();
+    x.globalCompositeOperation = 'destination-out';
+    var V = [];
+    for (var k = 0; k < 6; k++) {
+      var a = turn + k * Math.PI / 3;
+      V.push([cx + r * Math.cos(a), cx + r * Math.sin(a)]);
+    }
+    x.beginPath();
+    V.forEach(function (p, i) { if (i) x.lineTo(p[0], p[1]); else x.moveTo(p[0], p[1]); });
+    x.closePath(); x.fill();
+    x.lineWidth = gap;
+    for (k = 0; k < 6; k++) {
+      var p = V[k], q = V[(k + 1) % 6], dx = q[0] - p[0], dy = q[1] - p[1], L = Math.hypot(dx, dy);
+      dx /= L; dy /= L;
+      x.beginPath();
+      x.moveTo(p[0] - dx * gap * 0.5, p[1] - dy * gap * 0.5);
+      x.lineTo(q[0] + dx * R * 2, q[1] + dy * R * 2);
+      x.stroke();
+    }
+    var c2 = document.createElement('canvas');
+    c2.width = c2.height = S;
+    var y = c2.getContext('2d');
+    y.filter = 'blur(' + (S * 0.012) + 'px)';
+    y.drawImage(c, 0, 0);
+    y.filter = 'none';
+    var im = y.getImageData(0, 0, S, S), d = im.data;
+    for (var i = 0; i < d.length; i += 4) {
+      d[i] = d[i + 1] = d[i + 2] = 255;
+      d[i + 3] = d[i + 3] > 128 ? 255 : 0;
+    }
+    y.putImageData(im, 0, 0);
+    return c2;
+  }
+
+  var W = 512, H = 423, out = document.createElement('canvas');
+  out.width = W; out.height = H;
+  var o = out.getContext('2d');
+  o.fillStyle = BLUE;
+  o.fillRect(0, 0, W, H);
+  var D = 212;
+  o.imageSmoothingEnabled = true;
+  o.imageSmoothingQuality = 'high';
+  o.drawImage(shutter(D), (W - D) / 2, 62, D, D);
+  o.fillStyle = '#fff';
+  o.textAlign = 'center';
+  o.font = '600 60px "Helvetica Neue", Helvetica, Arial, sans-serif';
+  o.fillText('Shutter', W / 2, 356);
+
+  var url = out.toDataURL('image/png');
+  document.getElementById('preview').src = url;
+  document.getElementById('download').href = url;
+</script>
+</body>
+</html>

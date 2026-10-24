@@ -1,0 +1,640 @@
+/* Laid out for a 1920×1080 TV viewport. Plain CSS (no custom properties) for older TV browsers. */
+
+html, body {
+  margin: 0;
+  width: 100%;
+  height: 100%;
+  overflow: hidden;
+  background: #000;
+  color: #fff;
+  font-family: "SamsungOne", "Tizen Sans", "Helvetica Neue", Arial, sans-serif;
+  cursor: none;
+}
+
+.hidden { display: none !important; }
+
+/* ---------- slides ---------- */
+
+#stage, .slide, .bg, .mover {
+  position: absolute;
+  top: 0; left: 0; right: 0; bottom: 0;
+}
+
+.slide {
+  opacity: 0;
+  transition: opacity 1.5s ease-in-out;
+  overflow: hidden;
+}
+.slide.active { opacity: 1; }
+
+/* A tiny, already-blurred canvas stretched over the screen (see paintBackdrop in app.js).
+   No CSS filter: TV GPUs can silently drop big blur filters. */
+.bg {
+  width: 100%;
+  height: 100%;
+  display: none;
+}
+.fit-blur .bg { display: block; }
+
+.photo {
+  position: absolute;
+  top: 0; left: 0;
+  width: 100%;
+  height: 100%;
+  object-fit: contain;
+  display: block;
+}
+/* The full photo fading in over its small preview (see sharpen in app.js). */
+.photo.sharpening { opacity: 0; transition: opacity 0.5s ease-out; will-change: opacity; }
+.photo.sharpening.in { opacity: 1; }
+.fit-cover .photo { object-fit: cover; }
+
+/* Portraits always fit, over a blurred background (overrides "fill" and "black edges"). */
+.slide.portrait .bg { display: block; }
+.slide.portrait .photo { object-fit: contain; }
+
+/*
+ * Ken Burns: a slow zoom in or out with a drift, picked at random per photo. The moves
+ * themselves (keyframes) are generated in app.js from the pan & zoom settings. It
+ * freezes while the slideshow is paused.
+ */
+.mover { -webkit-backface-visibility: hidden; backface-visibility: hidden; will-change: transform; }
+.motion .mover.kb {
+  -webkit-animation-timing-function: linear;
+  animation-timing-function: linear;
+  -webkit-animation-fill-mode: both;
+  animation-fill-mode: both;
+}
+.paused .mover.kb { -webkit-animation-play-state: paused; animation-play-state: paused; }
+
+/* ---------- overlay ---------- */
+
+#overlay {
+  position: absolute;
+  left: 0; right: 0; bottom: 0;
+  height: 220px;
+  padding: 0 72px 56px;
+  box-sizing: border-box;
+  display: -webkit-flex;
+  display: flex;
+  -webkit-align-items: flex-end;
+  align-items: flex-end;
+  -webkit-justify-content: space-between;
+  justify-content: space-between;
+  pointer-events: none;
+  text-shadow: 0 2px 12px rgba(0, 0, 0, 0.75), 0 0 2px rgba(0, 0, 0, 0.6);
+}
+
+#caption, #clock {
+  opacity: 0;
+  transition: opacity 0.6s;
+}
+.show-info #caption, .show-clock #clock { opacity: 0.92; }
+
+/* Photo details (▲ / Info). The caption makes way for it; the clock shows even if it's off. */
+#photo-info {
+  position: absolute;
+  left: 72px; bottom: 56px;
+  max-width: 1100px;
+  padding: 26px 36px 28px;
+  border-radius: 22px;
+  background: rgba(12, 14, 20, 0.74);
+  border: 1px solid rgba(255, 255, 255, 0.12);
+  box-shadow: 0 12px 40px rgba(0, 0, 0, 0.45);
+  opacity: 0;
+  -webkit-transform: translateY(18px);
+  transform: translateY(18px);
+  -webkit-transition: opacity 0.3s, -webkit-transform 0.3s;
+  transition: opacity 0.3s, transform 0.3s;
+  pointer-events: none;
+}
+.info-open #photo-info { opacity: 1; -webkit-transform: none; transform: none; }
+.info-open #caption { opacity: 0; }
+.info-open #clock { opacity: 0.92; }
+#info-date { font-size: 38px; font-weight: 400; }
+#info-source { font-size: 30px; margin-top: 8px; }
+#info-file, #info-position { font-size: 26px; opacity: 0.7; margin-top: 6px; }
+#info-source:empty, #info-file:empty { display: none; }
+
+#caption-date { font-size: 34px; font-weight: 300; }
+#caption-sub { font-size: 26px; font-weight: 300; opacity: 0.75; margin-top: 6px; }
+#clock { font-size: 64px; font-weight: 200; letter-spacing: 1px; }
+
+#toast {
+  position: absolute;
+  top: 56px;
+  left: 50%;
+  -webkit-transform: translateX(-50%);
+  transform: translateX(-50%);
+  padding: 18px 36px;
+  border-radius: 999px;
+  background: rgba(20, 20, 20, 0.78);
+  font-size: 28px;
+  opacity: 0;
+  transition: opacity 0.4s;
+  white-space: nowrap;
+}
+#toast.visible { opacity: 1; }
+
+/* ---------- full-screen message ---------- */
+
+#message {
+  position: absolute;
+  top: 0; left: 0; right: 0; bottom: 0;
+  display: -webkit-flex;
+  display: flex;
+  -webkit-flex-direction: column;
+  flex-direction: column;
+  -webkit-align-items: center;
+  align-items: center;
+  -webkit-justify-content: center;
+  justify-content: center;
+  background: rgba(0, 0, 0, 0.82);
+  text-align: center;
+  padding: 0 200px;
+}
+#message h1 { font-size: 52px; font-weight: 300; margin: 0 0 24px; }
+#message p { font-size: 30px; font-weight: 300; opacity: 0.75; margin: 0; white-space: pre-line; line-height: 1.5; }
+
+/* ---------- loading spinner ---------- */
+
+/* An arc that grows to about 3/4 of a circle and shrinks back while the whole thing
+   turns. Rotation is a transform (GPU); the arc length is a small SVG repaint. */
+.spinner {
+  width: 104px;
+  height: 104px;
+  -webkit-animation: spinner-turn 1.8s linear infinite;
+  animation: spinner-turn 1.8s linear infinite;
+}
+.spinner circle {
+  fill: none;
+  stroke: #2f6fde;
+  stroke-width: 6;
+  stroke-linecap: round;
+  stroke-dasharray: 1, 150;
+  stroke-dashoffset: 0;
+  -webkit-animation: spinner-arc 1.4s ease-in-out infinite;
+  animation: spinner-arc 1.4s ease-in-out infinite;
+}
+@-webkit-keyframes spinner-turn { to { -webkit-transform: rotate(360deg); } }
+@keyframes spinner-turn { to { transform: rotate(360deg); } }
+@-webkit-keyframes spinner-arc {
+  0% { stroke-dasharray: 1, 150; stroke-dashoffset: 0; }
+  50% { stroke-dasharray: 92, 150; stroke-dashoffset: -32; }
+  100% { stroke-dasharray: 92, 150; stroke-dashoffset: -124; }
+}
+@keyframes spinner-arc {
+  0% { stroke-dasharray: 1, 150; stroke-dashoffset: 0; }
+  50% { stroke-dasharray: 92, 150; stroke-dashoffset: -32; }
+  100% { stroke-dasharray: 92, 150; stroke-dashoffset: -124; }
+}
+
+/* Full-screen loading: spinner only; problem messages: text only. */
+#message .spinner { display: none; }
+#message.loading .spinner { display: block; }
+#message.loading h1, #message.loading p { display: none; }
+#message.loading { background: #0b0d12; }
+
+#albums-loading {
+  position: absolute;
+  top: 0; left: 0; right: 0; bottom: 0;
+  display: -webkit-flex;
+  display: flex;
+  -webkit-align-items: center;
+  align-items: center;
+  -webkit-justify-content: center;
+  justify-content: center;
+}
+
+/* ---------- settings ---------- */
+
+/* Two columns: categories on the left, the current category's options on the right.
+   Sized for reading from the sofa; lines up with the Albums screen's header.
+   Selected items are filled very light grey with dark text (no borders); buttons are pills. */
+#settings {
+  position: absolute;
+  top: 0; left: 0; right: 0; bottom: 0;
+  background: #0b0d12; /* opaque: the slideshow caption and clock shouldn't show through */
+  cursor: default;
+}
+.settings-title {
+  position: absolute;
+  top: 0; left: 136px;
+  height: 150px;
+  line-height: 150px;
+  margin: 0;
+  font-size: 52px;
+  font-weight: 300;
+}
+.settings-body {
+  position: absolute;
+  top: 176px; left: 136px; right: 136px; bottom: 72px;
+  display: -webkit-flex;
+  display: flex;
+}
+
+.settings-left {
+  width: 500px;
+  margin-right: 80px;
+  -webkit-flex-shrink: 0;
+  flex-shrink: 0;
+  display: -webkit-flex;
+  display: flex;
+  -webkit-flex-direction: column;
+  flex-direction: column;
+}
+.cat {
+  height: 92px;
+  margin-bottom: 14px;
+  padding: 0 36px;
+  display: -webkit-flex;
+  display: flex;
+  -webkit-align-items: center;
+  align-items: center;
+  border-radius: 20px;
+  font-size: 38px;
+  color: rgba(255, 255, 255, 0.6);
+  cursor: pointer;
+}
+.cat.current { background: rgba(255, 255, 255, 0.1); color: #fff; }
+.cat.focused { background: #e4e6ea; color: #0b0d12; }
+.settings-save {
+  margin-top: auto;
+  height: 96px;
+  display: -webkit-flex;
+  display: flex;
+  -webkit-align-items: center;
+  align-items: center;
+  -webkit-justify-content: center;
+  justify-content: center;
+  border-radius: 999px;
+  background: #2f6fde;
+  font-size: 34px;
+  cursor: pointer;
+}
+.settings-save.focused { background: #e4e6ea; color: #0b0d12; }
+
+.settings-right {
+  -webkit-flex: 1 1 auto;
+  flex: 1 1 auto;
+  min-width: 0;
+}
+.row {
+  display: -webkit-flex;
+  display: flex;
+  -webkit-align-items: center;
+  align-items: center;
+  -webkit-justify-content: space-between;
+  justify-content: space-between;
+  height: 92px;
+  margin-bottom: 14px;
+  padding: 0 36px;
+  border-radius: 20px;
+  font-size: 36px;
+  color: rgba(255, 255, 255, 0.82);
+  cursor: pointer;
+}
+.row.focused { background: #e4e6ea; color: #0b0d12; }
+.row-button {
+  -webkit-justify-content: center;
+  justify-content: center;
+  margin-top: 24px;
+  border-radius: 999px;
+  background: rgba(255, 255, 255, 0.1);
+}
+
+.row .value { color: #fff; }
+.row.focused .value { color: #0b0d12; }
+.row-choice .value {
+  display: -webkit-flex;
+  display: flex;
+  -webkit-align-items: center;
+  align-items: center;
+  min-width: 0;
+}
+.choice-text { max-width: 520px; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+.arrow { opacity: 0.35; padding: 0 20px; font-size: 28px; }
+.row.focused .arrow { opacity: 0.55; }
+
+/* Text fields: no border, just a soft background; darker-on-light inside a selected row. */
+.row input {
+  width: 560px;
+  font: inherit;
+  color: #fff;
+  background: rgba(255, 255, 255, 0.08);
+  border: none;
+  border-radius: 12px;
+  padding: 8px 20px;
+  outline: none;
+}
+.row input:focus { background: rgba(255, 255, 255, 0.16); }
+.row input::-webkit-input-placeholder { color: rgba(255, 255, 255, 0.35); }
+.row.focused input { color: #0b0d12; background: rgba(11, 13, 18, 0.07); }
+.row.focused input:focus { background: rgba(11, 13, 18, 0.13); }
+.row.focused input::-webkit-input-placeholder { color: rgba(11, 13, 18, 0.4); }
+
+.row-password input { width: 420px; margin-left: auto; }
+.reveal {
+  width: 170px;
+  margin-left: 20px;
+  text-align: center;
+  font-size: 28px;
+  opacity: 0.45;
+  white-space: nowrap;
+}
+.row.focused .reveal { opacity: 0.75; }
+
+#settings-status { min-height: 48px; margin: 24px 36px 0; font-size: 31px; }
+#settings-status.ok { color: #7ee2a0; }
+#settings-status.error { color: #ff8a80; }
+#settings-status.busy { color: #b6c8ff; }
+
+/* About: information only. */
+.about { padding: 8px 36px 0; }
+.about-name { font-size: 52px; font-weight: 300; }
+.about-tagline { font-size: 31px; margin-top: 6px; }
+.about-version { font-size: 31px; opacity: 0.75; margin-top: 8px; }
+.about-line { font-size: 31px; margin-top: 26px; }
+.about-details { margin-top: 40px; }
+.about-detail { font-size: 29px; line-height: 1.6; }
+.about-label { display: inline-block; width: 290px; opacity: 0.6; }
+.about-small { font-size: 25px; line-height: 1.45; opacity: 0.55; margin-top: 30px; max-width: 1000px; }
+
+/* ---------- album browser ---------- */
+
+#albums {
+  position: absolute;
+  top: 0; left: 0; right: 0; bottom: 0;
+  background: #0b0d12;
+  cursor: default;
+  overflow: hidden;
+  /* Fades in over the slideshow when opened (albums.js _fadeIn). */
+  opacity: 0;
+  -webkit-transition: opacity 0.3s ease-out;
+  transition: opacity 0.3s ease-out;
+}
+#albums.shown { opacity: 1; }
+
+/* Each card moves up into place and fades in, one after another (delays set in albums.js).
+   'backwards' applies the start state during the delay but leaves nothing behind after. */
+/* Cards are measured against the track (cardPos in albums.js), which allows for the
+   slot becoming their offsetParent while it's transformed. */
+/* The selected card's slot sits above the others. While slots animate in, each one is
+   its own stacking context, so the card's own z-index wouldn't lift its ring and drop
+   shadow over the neighbouring cards until the entrance ended. Slots are flex items,
+   so z-index applies without positioning them. */
+.card-slot.focused { z-index: 2; }
+#albums.enter .card-slot {
+  -webkit-animation: card-in 0.5s cubic-bezier(0.2, 0.7, 0.2, 1) backwards;
+  animation: card-in 0.5s cubic-bezier(0.2, 0.7, 0.2, 1) backwards;
+}
+@-webkit-keyframes card-in {
+  from { opacity: 0; -webkit-transform: translateY(40px); }
+  to { opacity: 1; -webkit-transform: translateY(0); }
+}
+@keyframes card-in {
+  from { opacity: 0; transform: translateY(40px); }
+  to { opacity: 1; transform: translateY(0); }
+}
+
+/* The grid is a fixed window onto the track, which slides up and down (albums.js) with
+   a GPU transform instead of scrolling, so moving between rows animates smoothly.
+   The track's top padding keeps the first row clear of the header (HEADER_HEIGHT in
+   albums.js) with room for the focused card's scale and ring.
+   Flex gap isn't available on older TV browsers, so cards use margins. */
+#albums-grid {
+  position: absolute;
+  top: 0; left: 0; right: 0; bottom: 0;
+  overflow: hidden;
+}
+#albums-track {
+  position: relative;
+  box-sizing: border-box;
+  padding: 168px 120px 0; /* sides centre the 3 x 560px columns on 1920px */
+  display: -webkit-flex;
+  display: flex;
+  -webkit-flex-wrap: wrap;
+  flex-wrap: wrap;
+  -webkit-align-content: flex-start;
+  align-content: flex-start;
+  will-change: transform;
+}
+
+/* Space under the last row, as a full-width spacer row. With the cards' 16px margin
+   this leaves BOTTOM_ROOM (albums.js) under the last row. */
+#albums-track::after {
+  content: '';
+  width: 100%;
+  height: 80px;
+  -webkit-flex-shrink: 0;
+  flex-shrink: 0;
+}
+
+.albums-header {
+  position: absolute;
+  top: 0; left: 0; right: 0;
+  height: 140px;
+  display: -webkit-flex;
+  display: flex;
+  -webkit-align-items: center;
+  align-items: center;
+  -webkit-justify-content: space-between;
+  justify-content: space-between;
+  padding: 0 136px; /* lines up with the cards' outer edges */
+  box-sizing: border-box;
+  z-index: 2;
+}
+/* Frost: a blurred copy of the covers underneath, painted in albums.js (no CSS blur). */
+.header-frost-clip, .header-tint {
+  position: absolute;
+  top: 0; left: 0;
+  width: 100%;
+  height: 100%;
+}
+/* The frost is a blurred copy of the whole track (painted once in albums.js) that slides
+   with the same GPU transition as the track, seen through the header. The mask fades it
+   out towards the bottom, opaque for the top 45%, like the tint above it. */
+.header-frost-clip {
+  overflow: hidden;
+  -webkit-mask-image: linear-gradient(to bottom, #000 45%, transparent 100%);
+  mask-image: linear-gradient(to bottom, #000 45%, transparent 100%);
+}
+.header-frost {
+  position: absolute;
+  top: 0; left: 0;
+  width: 100%;
+  will-change: transform;
+}
+/* Fades out to 0% at the bottom, like the frost under it, so the header has no edge. */
+.header-tint {
+  background: linear-gradient(to bottom, rgba(11, 13, 18, 0.9) 0%, rgba(11, 13, 18, 0.55) 55%, rgba(11, 13, 18, 0) 100%);
+}
+.header-left, .header-right { position: relative; }
+.header-left h1 { font-size: 46px; font-weight: 300; margin: 0; }
+#albums-status { font-size: 24px; opacity: 0.7; margin-top: 2px; }
+#albums-status:empty { display: none; }
+.header-right {
+  display: -webkit-flex;
+  display: flex;
+  -webkit-align-items: center;
+  align-items: center;
+}
+
+.card {
+  position: relative;
+  width: 528px;
+  height: 330px;
+  margin: 16px;
+  border-radius: 22px;
+  cursor: pointer;
+  -webkit-transition: -webkit-transform 0.2s ease-out;
+  transition: transform 0.2s ease-out;
+}
+.card.focused {
+  -webkit-transform: scale(1.05);
+  transform: scale(1.05);
+  z-index: 1;
+}
+.cover {
+  position: absolute;
+  top: 0; left: 0; right: 0; bottom: 0;
+  border-radius: 22px;
+  overflow: hidden;
+  /* Backup for older Chromium, which otherwise may not clip GPU-drawn canvases to the radius. */
+  -webkit-mask-image: -webkit-radial-gradient(white, black);
+  background: linear-gradient(135deg, #2a3242, #151922);
+}
+/* Shadow and focus ring live on the card: the cover's mask would clip them. */
+.card { box-shadow: 0 10px 30px rgba(0, 0, 0, 0.45); }
+.card.focused { box-shadow: 0 0 0 5px #fff, 0 22px 60px rgba(0, 0, 0, 0.7); }
+.cover-art {
+  display: block;
+  width: 100%;
+  height: 100%;
+  opacity: 0;
+  transition: opacity 0.4s;
+}
+.card.loaded .cover-art { opacity: 1; }
+
+/* Frosted label: a full-width band along the cover's bottom. The canvas behind the text
+   is a blurred copy of that strip (painted in albums.js); height matches LABEL_HEIGHT there. */
+.card-label {
+  position: absolute;
+  left: 0; right: 0; bottom: 0;
+  height: 92px;
+  box-sizing: border-box;
+  padding: 13px 24px;
+  border-radius: 0 0 22px 22px;
+  overflow: hidden;
+  -webkit-mask-image: -webkit-radial-gradient(white, black);
+  background: rgba(30, 33, 40, 0.6);
+  border-top: 1px solid rgba(255, 255, 255, 0.18);
+  display: -webkit-flex;
+  display: flex;
+  -webkit-flex-direction: column;
+  flex-direction: column;
+  -webkit-justify-content: center;
+  justify-content: center;
+}
+/* The label waits for its cover and fades in with it (the frost behind it is painted from
+   the cover), so the text never shows before the picture. */
+.card-label { opacity: 0; transition: opacity 0.4s; }
+.card.loaded .card-label, .card.empty .card-label { opacity: 1; }
+.card-sub:empty { display: none; }
+.card-frost {
+  position: absolute;
+  top: 0; left: 0;
+  width: 100%;
+  height: 100%;
+}
+.card-title, .card-sub { position: relative; }
+.card-title {
+  font-size: 29px;
+  font-weight: 500;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  text-shadow: 0 1px 6px rgba(0, 0, 0, 0.35);
+}
+.card-sub { font-size: 21px; opacity: 0.8; margin-top: 2px; }
+
+.badge {
+  position: absolute;
+  top: 18px; left: 18px;
+  padding: 5px 16px;
+  border-radius: 999px;
+  background: #2f6fde;
+  font-size: 20px;
+  box-shadow: 0 2px 10px rgba(0, 0, 0, 0.4);
+}
+
+.settings-btn {
+  display: -webkit-flex;
+  display: flex;
+  -webkit-align-items: center;
+  align-items: center;
+  padding: 10px 28px 10px 20px;
+  border-radius: 999px;
+  border: 3px solid transparent;
+  background: rgba(255, 255, 255, 0.08);
+  color: rgba(255, 255, 255, 0.85);
+  font-size: 26px;
+  cursor: pointer;
+  -webkit-transition: -webkit-transform 0.2s ease-out;
+  transition: transform 0.2s ease-out;
+}
+.settings-btn svg { margin-right: 12px; }
+.settings-btn.focused {
+  background: rgba(255, 255, 255, 0.18);
+  border-color: #fff;
+  color: #fff;
+  -webkit-transform: scale(1.05);
+  transform: scale(1.05);
+}
+
+/* ---------- exit confirmation ---------- */
+
+#exit-dialog {
+  position: absolute;
+  top: 0; left: 0; right: 0; bottom: 0;
+  background: rgba(5, 6, 9, 0.7);
+  display: -webkit-flex;
+  display: flex;
+  -webkit-align-items: center;
+  align-items: center;
+  -webkit-justify-content: center;
+  justify-content: center;
+  z-index: 10;
+  cursor: default;
+}
+/* Matches Settings: no borders, pill buttons, the blue for the main action, and the
+   very light grey for whichever button is selected. */
+.dialog {
+  width: 860px;
+  padding: 48px 52px 44px;
+  box-sizing: border-box;
+  border-radius: 28px;
+  background: #1a1d25;
+  box-shadow: 0 30px 90px rgba(0, 0, 0, 0.6);
+  text-align: left;
+}
+.dialog h2 { margin: 0 0 44px; font-size: 34px; font-weight: 400; }
+.dialog-buttons {
+  display: -webkit-flex;
+  display: flex;
+  -webkit-justify-content: flex-end;
+  justify-content: flex-end;
+}
+.dialog-btn {
+  width: 220px;
+  height: 76px;
+  margin-left: 20px;
+  border-radius: 999px;
+  background: rgba(255, 255, 255, 0.1);
+  font-size: 32px;
+  line-height: 76px;
+  text-align: center;
+  cursor: pointer;
+}
+.dialog-btn[data-action="exit"] { background: #2f6fde; }
+.dialog-btn.focused, .dialog-btn[data-action="exit"].focused { background: #e4e6ea; color: #0b0d12; }

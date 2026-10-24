@@ -1,0 +1,14 @@
+# Signed builds (dev/deploy.sh); they're tied to your own certificate
+.buildResult/
+*.wgt
+
+# Tizen Studio project files and signatures
+.project
+.tproject
+.settings/
+author-signature.xml
+signature*.xml
+
+# macOS / Python
+.DS_Store
+__pycache__/
