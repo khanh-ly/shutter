@@ -46,6 +46,17 @@
         "800"
       ],
       "port": 8083
+    },
+    {
+      "name": "showcase",
+      "runtimeExecutable": "python3",
+      "runtimeArgs": [
+        "dev/mock_server.py",
+        "--port",
+        "8090",
+        "--showcase"
+      ],
+      "port": 8090
     }
   ]
 }

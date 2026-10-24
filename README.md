@@ -2,6 +2,19 @@
 
 *The unofficial Synology Photos app for Samsung TV.*
 
+![Shutter playing a slideshow on a Samsung The Frame TV](docs/screenshots/slideshow-tv.png)
+
+<table>
+  <tr>
+    <td><img src="docs/screenshots/albums-tv.png" alt="The album grid"></td>
+    <td><img src="docs/screenshots/settings-tv.png" alt="The Slideshow settings"></td>
+  </tr>
+  <tr>
+    <td align="center">Pick an album</td>
+    <td align="center">Settings, on the TV</td>
+  </tr>
+</table>
+
 A Samsung TV (Tizen) app that plays a slideshow of your **Synology Photos** library:
 all your photos, a single album, or Shared Space, with crossfades, a slow pan and zoom,
 the date each photo was taken, and a clock.
@@ -112,6 +125,28 @@ python3 dev/mock_server.py --port 8082 --proxy http://192.168.1.20:5000
 
 Then open http://localhost:8082 and use `localhost:8082` as the DSM address.
 
+### Screenshots
+
+The images at the top come from the real app, against a demo library in the mock server
+(`--showcase`, see [dev/showcase.py](dev/showcase.py)) with photos from Unsplash. To make
+them again after a UI change:
+
+```bash
+python3 dev/showcase.py --fetch
+```
+
+```bash
+python3 dev/mock_server.py --port 8090 --showcase
+```
+
+```bash
+dev/screenshots.sh
+```
+
+The first downloads the photos (they aren't in the repo), the second serves the demo
+library, and the third captures each screen at 1920x1080 with headless Chrome and puts it
+on a TV drawn in the proportions of a 55" The Frame ([dev/mockup.html](dev/mockup.html)).
+
 ## Notes
 
 - Built for 2017+ Frame TVs (Tizen 3.0, Chromium 47), so the code avoids newer JavaScript.
@@ -150,6 +185,23 @@ Then open http://localhost:8082 and use `localhost:8082` as the DSM address.
 ## License
 
 © 2026 Khanh Ly. Released under the [MIT License](LICENSE).
+
+Photos in the screenshots are from [Unsplash](https://unsplash.com), used under the
+[Unsplash License](https://unsplash.com/license):
+
+- [Vestrahorn, Iceland](https://unsplash.com/photos/ruWkmt3nU58) by Luca Micheli
+- [River valley, Iceland](https://unsplash.com/photos/W3_MIcf4nyE) by 35MM North
+- [Hotel on a mountain pass](https://unsplash.com/photos/tFo8WNjvX9I) by Chris Weiher
+- [Friends taking a selfie](https://unsplash.com/photos/-WBVWFBfoEc) by Vitaly Gariev
+- [Temple in autumn, Kyoto](https://unsplash.com/photos/YbcX7QktfjA) by Omkar Jori
+- [St Michael's Mount](https://unsplash.com/photos/-EHDvg8o_zE) by BEN ELLIOTT
+- [Wadi Rum](https://unsplash.com/photos/IDYdmpjQXZQ) by Rita
+- [Aurora over snowy mountains](https://unsplash.com/photos/EvKBHBGgaUo) by Jonatan Pie
+- [Cabin by a forest lake](https://unsplash.com/photos/B6IIw00D1gA) by Michael Kahn
+- [Tokyo street at night](https://unsplash.com/photos/_noSmX8Kgoo) by Jezael Melgoza
+- [Hong Kong neon in the rain](https://unsplash.com/photos/DdQkVaQbSsg) by Nic Low
+- [Espresso portafilter](https://unsplash.com/photos/pRzbLPQOnwM) by Marko Alpner
+- [Making coffee](https://unsplash.com/photos/QfTpbOey94s) by Pete Willis
 
 The Settings cog icon is from [Material Design Icons](https://github.com/google/material-design-icons) by Google, Apache License 2.0.
 

@@ -9,6 +9,12 @@
 author-signature.xml
 signature*.xml
 
+# Unsplash photos for the showcase mock (dev/showcase.py --fetch), and the raw
+# screenshots that dev/mockup.html frames (only the framed *-tv.png are kept)
+dev/showcase-photos/
+docs/screenshots/*.png
+!docs/screenshots/*-tv.png
+
 # macOS / Python
 .DS_Store
 __pycache__/
