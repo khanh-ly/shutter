@@ -24,25 +24,63 @@ the date each photo was taken, and a clock.
 > turns off the TV's screensaver while it's open. Brightness and power schedules still
 > come from the TV's own settings.
 
-## 1. Prepare your Synology
+## Requirements
+
+- **A Samsung smart TV running Tizen**, 2017 or newer. Built and tested on a 2022
+  The Frame (QE50LS03B, Tizen 6.5).
+- **A Synology NAS with DSM 7 and the Synology Photos package.**
+- **A computer for the one-time install:** macOS, Linux or Windows. It has to be on the same
+  home network as the TV and the NAS. After installing, the TV needs neither the computer
+  nor the internet: it talks to the NAS directly.
+
+There's no ready-made download yet: you build the app from this code and install it on
+your TV in Developer Mode, as below. It takes about half an hour the first time.
+
+## 1. Get the code
+
+<!-- TODO: replace OWNER/REPO with the GitHub repository once it exists. -->
+
+```bash
+git clone https://github.com/OWNER/REPO.git shutter
+```
+
+Or download it as a ZIP from the repository page (**Code → Download ZIP**) and unzip it.
+Run the commands below from that folder.
+
+## 2. Prepare your Synology
 
 1. In DSM, create a dedicated user (e.g. `photoframe`) and give it access to Synology Photos.
    Share the albums you want with it, or let it see the Shared Space.
    *Don't* turn on 2-factor sign-in for this user; the TV can't enter codes.
-2. Find the NAS's LAN address, e.g. `http://192.168.1.20:5000`.
-   Port 5000 is HTTP and 5001 is HTTPS, so `http://…:5001` won't work. Use plain `http://` on the LAN, or `https://` only with a valid certificate
-   (the TV rejects self-signed ones).
+2. Find the NAS's address on your network, e.g. `http://192.168.1.20:5000`. It's in DSM
+   under **Control Panel → Network → Network Interface**, or open
+   [find.synology.com](https://find.synology.com) on a computer on the same network.
+   Port 5000 is HTTP and 5001 is HTTPS, so `http://…:5001` won't work. Use plain `http://` on
+   the LAN, or `https://` only with a valid certificate (the TV rejects self-signed ones).
 
-## 2. Put the TV in Developer Mode
+## 3. Put the TV in Developer Mode
 
-1. On the TV, open **Apps**, then type `1 2 3 4 5` on the remote's number pad
+1. Find your computer's IP address on the network:
+   - **macOS:** **System Settings → Wi-Fi → Details** (or **Network → Ethernet**), or run
+     `ipconfig getifaddr en0` in Terminal.
+   - **Windows:** run `ipconfig` and use the **IPv4 Address** of the adapter you're connected with.
+   - **Linux:** run `hostname -I` and use the first address.
+2. Find the TV's IP address: on the TV, open **Settings → General** (**General & Privacy**
+   on newer models) **→ Network → Network Status → IP Settings**. You'll need it in step 6.
+3. On the TV, open **Apps**, then type `1 2 3 4 5` on the remote's number pad
    (or the on-screen one).
-2. Turn **Developer mode** on, enter your Mac's IP address as **Host PC IP**, and press OK.
-3. **Unplug the TV from the wall for 60 seconds**, then turn it back on. Restarting with the
+4. Turn **Developer mode** on, enter your computer's IP address as **Host PC IP**, and press OK.
+5. **Unplug the TV from the wall for 60 seconds**, then turn it back on. Restarting with the
    remote (even holding the power button) isn't enough. Until the TV is cold-booted, it says
    Developer Mode is on but refuses connections.
 
-## 3. Install the tools (one time)
+## 4. Install the tools (one time)
+
+The app is built and installed with Samsung's Tizen Studio command-line tools. The commands
+below use version 6.1; newer installers are on Samsung's
+[TV SDK page](https://developer.samsung.com/smarttv/develop/getting-started/setting-up-sdk/installing-tv-sdk.html).
+
+**macOS** (on Apple silicon, the tools run through Rosetta 2; macOS offers to install it):
 
 ```bash
 curl -LO https://download.tizen.org/sdk/Installer/tizen-studio_6.1/web-cli_Tizen_Studio_6.1_macos-64.bin
@@ -52,11 +90,30 @@ curl -LO https://download.tizen.org/sdk/Installer/tizen-studio_6.1/web-cli_Tizen
 bash web-cli_Tizen_Studio_6.1_macos-64.bin --accept-license ~/tizen-studio
 ```
 
+**Linux** (Ubuntu and similar):
+
+```bash
+curl -LO https://download.tizen.org/sdk/Installer/tizen-studio_6.1/web-cli_Tizen_Studio_6.1_ubuntu-64.bin
+```
+
+```bash
+bash web-cli_Tizen_Studio_6.1_ubuntu-64.bin --accept-license ~/tizen-studio
+```
+
+**Windows:** download
+[web-cli_Tizen_Studio_6.1_windows-64.exe](https://download.tizen.org/sdk/Installer/tizen-studio_6.1/web-cli_Tizen_Studio_6.1_windows-64.exe),
+run it and install to `C:\tizen-studio`. In the commands below, use
+`C:\tizen-studio\package-manager\package-manager-cli.exe` and
+`C:\tizen-studio\tools\ide\bin\tizen.bat` in place of the `~/tizen-studio/…` paths.
+
+Then add Samsung's TV extensions:
+
 ```bash
 ~/tizen-studio/package-manager/package-manager-cli.bin install --accept-license TV-SAMSUNG-Extension-Tools TV-SAMSUNG-Extension-Resources
 ```
 
-Then create a signing certificate and profile (pick your own password):
+and create a signing certificate and a security profile named `Shutter` (pick your own
+password; the first command prints where it saved `shutter.p12`, so use that path in the second):
 
 ```bash
 ~/tizen-studio/tools/ide/bin/tizen certificate -a Shutter -n "Shutter" -p <password> -f shutter
@@ -71,22 +128,43 @@ install with a certificate error, install `cert-add-on` and create a **Samsung**
 in the Certificate Manager (`~/tizen-studio/tools/certificate-manager`). That needs your
 Samsung account and the TV's DUID.
 
-## 4. (Optional) Pre-fill the settings
+## 5. (Optional) Pre-fill the settings
 
 Typing with a TV remote is tedious. Before building, you can fill in `server`, `account`
 and `password` in [js/config.js](js/config.js). Otherwise the app opens its settings screen on first launch.
 Don't commit a real password: `git update-index --skip-worktree js/config.js` keeps git from
 picking up your local edits.
 
-## 5. Build and install
+## 6. Build and install
+
+**macOS and Linux:**
 
 ```bash
 dev/deploy.sh <TV-IP>
 ```
 
-This builds, signs, installs and launches the app; run it again after any change. The app
-appears under **Apps** as *Shutter*. (Use `dev/deploy.sh` rather than `tizen install`:
-the TV's installer fails on the default package name, which contains a space.)
+This builds, signs, installs and launches the app; run it again after any change. If the
+connection to the TV drops, it restarts the connection and tries again. The app appears under
+**Apps** as *Shutter*.
+
+**Windows:** `dev/deploy.sh` is a bash script, so run its steps yourself in PowerShell, from
+the project folder (not tested on Windows yet; reports welcome):
+
+```powershell
+C:\tizen-studio\tools\sdb.exe connect <TV-IP>
+```
+
+```powershell
+C:\tizen-studio\tools\ide\bin\tizen.bat build-web -e ".*" -e "dev/*" -e "docs/*" -e "README.md" -- .
+```
+
+```powershell
+C:\tizen-studio\tools\ide\bin\tizen.bat package -t wgt -s Shutter -- .buildResult
+```
+
+```powershell
+C:\tizen-studio\tools\ide\bin\tizen.bat install -n Shutter.wgt -- .buildResult
+```
 
 ## Using it
 
@@ -104,7 +182,7 @@ Choose **Connect & load albums** to check your sign-in and list your albums.
 
 New photos are picked up every 6 hours (or right away when you press *Save & start* in settings).
 
-## Trying it on your Mac
+## Trying it on your computer
 
 `dev/mock_server.py` fakes a Synology so you can run the app in a browser:
 
@@ -173,7 +251,7 @@ on a TV drawn in the proportions of a 55" The Frame ([dev/mockup.html](dev/mocku
 
 - **Can't connect to the TV** (`sdb connect` fails although Developer Mode is on): unplug
   the TV for 60 seconds. If it still fails, turn Developer Mode off, cold-boot, turn it on
-  with your Mac's IP, and cold-boot again.
+  with your computer's IP, and cold-boot again.
 
 - **"Cannot reach …"**: check the address and port, and that the TV and NAS are on the same network.
 - **"Wrong username or password"**: after several failures DSM blocks the TV's IP.

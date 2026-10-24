@@ -21,7 +21,7 @@ fi
 sdb devices | grep -q "^$TARGET" || { echo "Can't reach the TV at $TARGET. Is Developer Mode on? (See README: Troubleshooting.)"; exit 1; }
 
 rm -rf .buildResult
-tizen build-web -e ".*" -e "dev/*" -e "README.md" -- . >/dev/null
+tizen build-web -e ".*" -e "dev/*" -e "docs/*" -e "README.md" -- . >/dev/null
 tizen package -t wgt -s "$PROFILE" -- .buildResult >/dev/null
 
 # The package is named after the app (e.g. "Shutter.wgt"), but the TV's
