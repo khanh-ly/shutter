@@ -58,6 +58,7 @@
   var APP_TAGLINE = 'The unofficial Synology Photos app for Samsung TV';
   var COPYRIGHT = '\u00a9 2026 Khanh Ly';
   var LICENSE = 'MIT License';
+  var REPO = 'github.com/khanh-ly/shutter'; // shown as text: the TV can't open links
 
   /*
    * The installed version and some facts about the TV, for the About page. The
@@ -306,6 +307,7 @@
     var version = el('div', 'about-version', 'Version \u2026');
     box.appendChild(version);
     box.appendChild(el('div', 'about-line', COPYRIGHT + ' \u00b7 Released under the ' + LICENSE));
+    box.appendChild(el('div', 'about-repo', 'Source code, help and updates: ' + REPO));
 
     var details = el('div', 'about-details');
     function detail(label, value) {

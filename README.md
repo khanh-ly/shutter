@@ -38,10 +38,8 @@ your TV in Developer Mode, as below. It takes about half an hour the first time.
 
 ## 1. Get the code
 
-<!-- TODO: replace OWNER/REPO with the GitHub repository once it exists. -->
-
 ```bash
-git clone https://github.com/OWNER/REPO.git shutter
+git clone https://github.com/khanh-ly/shutter.git
 ```
 
 Or download it as a ZIP from the repository page (**Code → Download ZIP**) and unzip it.

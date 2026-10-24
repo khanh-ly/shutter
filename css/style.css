@@ -355,6 +355,7 @@ html, body {
 .about-tagline { font-size: 31px; margin-top: 6px; }
 .about-version { font-size: 31px; opacity: 0.75; margin-top: 8px; }
 .about-line { font-size: 31px; margin-top: 26px; }
+.about-repo { font-size: 31px; opacity: 0.75; margin-top: 8px; }
 .about-details { margin-top: 40px; }
 .about-detail { font-size: 29px; line-height: 1.6; }
 .about-label { display: inline-block; width: 290px; opacity: 0.6; }
