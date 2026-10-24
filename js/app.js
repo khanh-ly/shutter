@@ -23,6 +23,7 @@
   // background after starting).
   var SESSION_KEY = 'synframe.session';
   var LIBRARY_KEY = 'synframe.library';
+  var VIEW_KEY = 'synframe.view'; // where the app was: its screen, and the photo on show
   var LIBRARY_CACHE_MAX = 20000; // photos; bigger libraries just load as usual
   // Ken Burns drift directions, as unit offsets (x, y) of the photo.
   var KB_DRIFTS = { n: [0, 1], s: [0, -1], e: [-1, 0], w: [1, 0], ne: [-1, 1], nw: [1, 1], se: [-1, -1], sw: [1, -1] };
@@ -74,6 +75,10 @@
   var sourceLabel = '';
   var currentPhoto = null;
   var started = false; // the slideshow has a list and has begun for the current source
+  // Launched back into the album grid or Settings: the slideshow has its list but waits,
+  // off screen, until it's chosen (no point decoding a photo nobody sees).
+  var holdSlideshow = false;
+  var resumePhoto = null; // id of the photo to start from, when picking up where it left off
   var libraryToken = 0; // changes per start(), so a list fetched for an earlier source is ignored
   var infoTimer = null;
   var INFO_MS = 8000;
@@ -454,6 +459,7 @@
     active = next;
 
     $('caption-date').textContent = datesReady ? formatTaken(photo.time) : '';
+    rememberPhoto(photo);
     $('caption-sub').textContent = sourceLabel;
     currentPhoto = photo;
     if (infoOpen()) showInfo(); // browsing with the panel open: show this photo's details
@@ -566,7 +572,36 @@
     photos = list;
     pos = -1;
     buildOrder();
-    show(1);
+    if (resumePhoto) placeBefore(resumePhoto); // pick up with the photo shown when the app closed
+    if (!holdSlideshow) show(1);
+  }
+
+  // Sets the position so that the next photo shown is the one with this id (if it's in
+  // the list). Returns whether it is.
+  function placeBefore(id) {
+    for (var i = 0; i < photos.length; i++) {
+      if (photos[i].id === id) {
+        pos = order.indexOf(i) - 1;
+        return true;
+      }
+    }
+    return false;
+  }
+
+  // ---------- where the app left off ----------
+
+  // Saved as the screens change, so the next launch opens the same one. (The TV can
+  // close an app without warning, e.g. when it's switched off, so there's no "on exit".)
+  var lastView = readStore(VIEW_KEY) || {};
+  function rememberView(view) {
+    lastView.view = view;
+    writeStore(VIEW_KEY, lastView);
+  }
+  function rememberPhoto(photo) {
+    resumePhoto = null; // on screen now: no longer something to get back to
+    lastView.source = sourceKey(settings);
+    lastView.photo = photo.id;
+    writeStore(VIEW_KEY, lastView);
   }
 
   // Takes a newer list (the full one, or a refresh) without interrupting the slideshow:
@@ -575,10 +610,12 @@
     var cur = currentPhoto;
     photos = list;
     buildOrder();
-    var idx = -1;
-    if (cur) for (var i = 0; i < photos.length; i++) if (photos[i].id === cur.id) { idx = i; break; }
-    var at = order.indexOf(idx);
-    pos = at >= 0 ? at : -1;
+    pos = -1;
+    if (cur) {
+      if (placeBefore(cur.id)) pos++;
+    } else if (resumePhoto) {
+      placeBefore(resumePhoto); // nothing shown yet (held behind the grid): keep the resume point
+    }
   }
 
   /*
@@ -702,6 +739,8 @@
       });
     },
     onSave: function (s) {
+      holdSlideshow = false;
+      rememberView('slideshow');
       photos = [];
       start(s);
     },
@@ -716,6 +755,7 @@
   });
 
   function openSettings(message) {
+    rememberView('settings');
     settingsUI.open(message);
   }
 
@@ -725,8 +765,14 @@
   // from it leaves the app. OK on the album that's playing goes back to the slideshow.
   var albumBrowser = new AlbumBrowser($('albums'), {
     onPick: function (pick) {
+      rememberView('slideshow');
+      var held = holdSlideshow;
+      holdSlideshow = false;
       var same = pick.source === settings.source && (pick.source !== 'album' || pick.albumId === settings.albumId);
-      if (same && photos.length) return; // carry on where the slideshow was
+      if (same && photos.length) {
+        if (held) show(1); // launched into the grid: the slideshow starts now
+        return; // otherwise carry on where the slideshow was
+      }
       var s = Object.assign({}, settings, pick);
       SettingsUI.save(s);
       photos = [];
@@ -748,7 +794,10 @@
     function close() { root.classList.add('hidden'); }
     function choose(action) {
       close();
-      if (action === 'exit') exitApp();
+      if (action === 'exit') {
+        rememberView('albums'); // after Exit, the next launch opens the album grid
+        exitApp();
+      }
     }
     buttons.forEach(function (b, i) {
       b.addEventListener('click', function () { focus = i; choose(b.getAttribute('data-action')); });
@@ -774,6 +823,7 @@
   function openAlbums(instant) {
     // Not set up yet: there's nothing to sign in with.
     if (!client) return openSettings();
+    rememberView('albums');
     albumBrowser.open(client, settings, { instant: instant });
   }
 
@@ -817,7 +867,7 @@
       clearTimeout(timer);
     } else {
       keepScreenOn(true);
-      if (photos.length) show(1);
+      if (photos.length && !holdSlideshow) show(1);
     }
   });
 
@@ -830,7 +880,13 @@
   var initial = SettingsUI.load();
   mark('settings read (source: ' + initial.source + ')');
   if (initial.server && initial.account && initial.password) {
+    // Open where the app left off: the slideshow (from the same photo), the album grid, or
+    // Settings. After Exit in the exit dialog, that's the album grid.
+    if (lastView.source === sourceKey(initial)) resumePhoto = lastView.photo;
+    holdSlideshow = lastView.view === 'albums' || lastView.view === 'settings';
     start(initial);
+    if (lastView.view === 'albums') openAlbums();
+    else if (lastView.view === 'settings') openSettings();
   } else {
     openSettings();
   }
