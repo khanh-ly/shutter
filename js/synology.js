@@ -238,9 +238,12 @@
    */
   function sourceParams(source) {
     if (source.type === 'favorites') {
-      // The photos marked as favorites (the heart) in the personal space. Shared Space
-      // has no favorites API.
-      return [{ api: 'SYNO.Foto.Favorite', version: 1, method: 'list', additional: '["thumbnail","resolution"]' }];
+      // The photos marked as favorites (the heart) in the personal space: a filter on the
+      // photo list (SYNO.Foto.Favorite only adds and removes them). Shared Space has none.
+      return [{
+        api: 'SYNO.Foto.Browse.Item', version: 7, method: 'list_with_filter', favorite: 'true',
+        additional: '["thumbnail","resolution"]'
+      }];
     }
     var base = {
       api: source.type === 'shared' ? 'SYNO.FotoTeam.Browse.Item' : 'SYNO.Foto.Browse.Item',

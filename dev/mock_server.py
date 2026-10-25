@@ -201,7 +201,7 @@ class Handler(http.server.SimpleHTTPRequestHandler):
                 src = TEAM if "Team" in api else PERSONAL
             return self.json({"success": True, "data": {"list": src[offset:offset + limit]}})
 
-        if api == "SYNO.Foto.Favorite" and method == "list":
+        if api == "SYNO.Foto.Browse.Item" and method == "list_with_filter" and q.get("favorite") == "true":
             # Every sixth personal photo is a favorite.
             offset, limit = int(q.get("offset", 0)), int(q.get("limit", 100))
             return self.json({"success": True, "data": {"list": PERSONAL[::6][offset:offset + limit]}})
