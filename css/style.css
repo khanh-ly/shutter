@@ -121,24 +121,26 @@ html, body {
 /*
  * Film strip (▲). Tiles sit at fixed places on the track (left = index × pitch, set in
  * app.js); moving the selection slides the whole track with a CSS transition.
+ * Nothing in it may reach past the screen: the TV shrinks the whole page to fit content
+ * that does (overflow: hidden on body isn't enough there). So the strip clips its track
+ * and only fades, rather than sliding up from below the screen.
  */
 #filmstrip {
   position: absolute;
   left: 0; right: 0; bottom: 0;
-  height: 380px;
+  height: 360px;
+  overflow: hidden;
   background: linear-gradient(rgba(0, 0, 0, 0), rgba(0, 0, 0, 0.82) 45%);
   opacity: 0;
-  -webkit-transform: translateY(40px);
-  transform: translateY(40px);
-  -webkit-transition: opacity 0.3s, -webkit-transform 0.3s;
-  transition: opacity 0.3s, transform 0.3s;
+  -webkit-transition: opacity 0.3s;
+  transition: opacity 0.3s;
   pointer-events: none;
 }
-.strip-open #filmstrip { opacity: 1; -webkit-transform: none; transform: none; }
+.strip-open #filmstrip { opacity: 1; }
 .strip-open #caption, .strip-open #photo-info, .strip-open #clock { opacity: 0; }
 #filmstrip-label {
   position: absolute;
-  left: 72px; right: 72px; top: 70px;
+  left: 72px; right: 72px; top: 90px;
   display: -webkit-flex;
   display: flex;
   -webkit-justify-content: space-between;
@@ -149,7 +151,7 @@ html, body {
 #filmstrip-count { opacity: 0.7; }
 #filmstrip-track {
   position: absolute;
-  left: 50%; top: 150px;
+  left: 50%; top: 156px;
   height: 160px;
   -webkit-transition: -webkit-transform 0.25s ease-out;
   transition: transform 0.25s ease-out;
