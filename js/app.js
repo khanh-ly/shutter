@@ -94,6 +94,7 @@
     datesReady = true;
     updateClock();
     if (currentPhoto) $('caption-date').textContent = formatTaken(currentPhoto.time);
+    if (stripOpen()) paintStrip(); // its date, if it was opened before dates were ready
     try {
       if (window.tizen && tizen.tvinputdevice) tizen.tvinputdevice.registerKeyBatch(TV_KEYS);
     } catch (e) {}
@@ -591,21 +592,32 @@
     canvas.width = Math.ceil(sw / k);
     canvas.height = Math.ceil(strip.offsetHeight / k);
     ctx.setTransform(1 / k, 0, 0, 1 / k, 0, -top / k);
-    ctx.fillStyle = '#000';
-    ctx.fillRect(0, top, sw, sh - top);
-    if (canFilter) ctx.filter = 'blur(3px)';
     var bg = slide.querySelector('.bg');
-    if (bg.offsetWidth) ctx.drawImage(bg, 0, 0, sw, sh);
+    var place = null;
     if (img && img.naturalWidth) {
       // Where object-fit puts the photo inside its (moved and scaled) box.
       var r = img.getBoundingClientRect();
       var iw = img.naturalWidth, ih = img.naturalHeight;
       var cover = settings.fit === 'cover' && !slide.classList.contains('portrait');
       var scale = cover ? Math.max(r.width / iw, r.height / ih) : Math.min(r.width / iw, r.height / ih);
-      var dw = iw * scale, dh = ih * scale;
-      ctx.drawImage(img, r.left + (r.width - dw) / 2, r.top + (r.height - dh) / 2, dw, dh);
+      place = [r.left + (r.width - iw * scale) / 2, r.top + (r.height - ih * scale) / 2, iw * scale, ih * scale];
     }
-    ctx.filter = 'none';
+    function scene(base) {
+      if (base) {
+        ctx.fillStyle = '#000';
+        ctx.fillRect(0, top, sw, sh - top);
+      }
+      if (bg.offsetWidth) ctx.drawImage(bg, 0, 0, sw, sh);
+      if (place) ctx.drawImage(img, place[0], place[1], place[2], place[3]);
+    }
+    // Sharp first, then blurred over it: where the blur thins out at the photo's edges,
+    // the photo shows through instead of black (which left a dark seam).
+    scene(true);
+    if (canFilter) {
+      ctx.filter = 'blur(3px)';
+      scene(false);
+      ctx.filter = 'none';
+    }
     ctx.setTransform(1, 0, 0, 1, 0, 0);
     // Fade the top edge out in the pixels (more dependable on the TV than a CSS mask).
     var fade = ctx.createLinearGradient(0, 0, 0, canvas.height);
