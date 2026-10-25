@@ -21,10 +21,10 @@ capture() { # out.png, url, width, height
   echo "$1"
 }
 
-for name in slideshow albums settings; do
+for name in slideshow albums settings filmstrip; do
   hash=$name; [ "$name" = slideshow ] && hash=""
   capture "$OUT/$name.png" "$URL#$hash" 1920 1080
 done
-for name in slideshow albums settings; do
+for name in slideshow albums settings filmstrip; do
   capture "$OUT/$name-tv.png" "file://$PWD/dev/mockup.html?shot=$name" 1600 1000
 done

@@ -7,17 +7,20 @@
 <table>
   <tr>
     <td><img src="docs/screenshots/albums-tv.png" alt="The album grid"></td>
+    <td><img src="docs/screenshots/filmstrip-tv.png" alt="The film strip over a photo"></td>
     <td><img src="docs/screenshots/settings-tv.png" alt="The Slideshow settings"></td>
   </tr>
   <tr>
     <td align="center">Pick an album</td>
+    <td align="center">Jump to a photo</td>
     <td align="center">Settings, on the TV</td>
   </tr>
 </table>
 
 A Samsung TV (Tizen) app that plays a slideshow of your **Synology Photos** library:
 all your photos, your favorites, a single album, or Shared Space, with crossfades, a slow pan and zoom,
-the date each photo was taken, and a clock.
+the date each photo was taken, and a clock. Press ▲ for a film strip to jump to another
+photo, or ▼ for where and with what camera the photo on show was taken.
 
 > **About Art Mode:** Samsung doesn't let third-party apps draw in the Frame's Art Mode.
 > This app runs as a normal TV app, so the TV stays in TV mode while it plays. The app
@@ -49,6 +52,9 @@ Run the commands below from that folder.
 
 1. In DSM, create a dedicated user (e.g. `photoframe`) and give it access to Synology Photos.
    Share the albums you want with it, or let it see the Shared Space.
+   Favorites belong to each DSM user: the **Favorites** tile shows the photos *this* user
+   has marked with a heart, so sign in to Synology Photos as it to mark them (or have the
+   TV sign in as your own account).
    *Don't* turn on 2-factor sign-in for this user; the TV can't enter codes.
 2. Find the NAS's address on your network, e.g. `http://192.168.1.20:5000`. It's in DSM
    under **Control Panel → Network → Network Interface**, or open
@@ -175,6 +181,10 @@ C:\tizen-studio\tools\ide\bin\tizen.bat install -n Shutter.wgt -- .buildResult
 | Color keys | Settings |
 | Back | Slideshow: open Albums (closes the film strip or photo details first); OK on an album plays it, ▲ from the top row reaches Settings (top right). In Albums: asks "Exit?" (Cancel is selected; Back cancels); OK on the *Playing* album returns to the slideshow. Settings: back to the categories, then to the album grid |
 
+The album grid starts with **Favorites**, then your albums (newest first), then Shared
+Space if the account can see it. To play your whole library, choose **All my photos** under
+*Photos* in Settings.
+
 On the settings screen, use ▲▼ to move, ◀▶ to change a choice, and OK to type into a field.
 Choose **Connect & load albums** to check your sign-in and list your albums.
 
@@ -236,6 +246,8 @@ on a TV drawn in the proportions of a 55" The Frame ([dev/mockup.html](dev/mocku
   addresses aren't supported.
 - To start faster, the app keeps the photo list, the sign-in session and the album covers
   on the TV between launches.
+- The place, camera and exposure in the photo details are asked of the NAS when you open
+  them, once per photo. The place needs location data in the photo (or set in Synology Photos).
 - Synology Photos' web API is undocumented. This app uses the same calls as Synology's web
   client and community tools. A future Synology Photos update could change them.
 
@@ -244,6 +256,9 @@ on a TV drawn in the proportions of a 55" The Frame ([dev/mockup.html](dev/mocku
 - **Connects but finds no photos or albums**: the DSM user only sees its own photos and albums
   shared with it. In Synology Photos (signed in as yourself), open an album → **Share** → add the
   frame's user. For Shared Space, give the user access under Synology Photos → Settings → Shared Space.
+- **No Favorites tile**: the Synology Photos package is too old for favorites (the heart);
+  update it in Package Center. **Favorites says "No photos"**: the account the TV signs in
+  with hasn't marked any; see [Prepare your Synology](#2-prepare-your-synology).
 - **`dev/login-test.html`** (open it through `dev/mock_server.py --proxy …`) checks sign-in and
   Photos access for an account, showing only result codes.
 

@@ -1,7 +1,8 @@
 /*
  * Loaded by `mock_server.py --showcase` only. Opens the screen named in the page address
- * so a headless browser can capture it: #albums (the grid) or #settings (Slideshow
- * settings). Without a hash the slideshow plays.
+ * so a headless browser can capture it: #albums (the grid), #settings (Slideshow
+ * settings) or #filmstrip (the film strip, a few photos along). Without a hash the
+ * slideshow plays.
  */
 (function () {
   var shot = location.hash.slice(1);
@@ -15,6 +16,15 @@
   }
   setTimeout(function () {
     if (shot === 'albums') key(10009); // Back: the album grid
+    if (shot === 'filmstrip') {
+      // Once a photo and its date are on screen (▲ does nothing before that).
+      var wait = setInterval(function () {
+        if (!document.querySelector('.slide.active') || !document.getElementById('caption-date').textContent) return;
+        clearInterval(wait);
+        key(38); // ▲: the film strip
+        key(39); key(39); // a couple of photos along, so there are thumbnails either side
+      }, 100);
+    }
     if (shot === 'settings') {
       key(403); // red button: settings
       setTimeout(function () { key(40); key(40); key(39); }, 300); // Slideshow, into its options
