@@ -151,7 +151,7 @@ html, body {
 #filmstrip::before {
   content: '';
   z-index: 1;
-  background: linear-gradient(rgba(11, 13, 18, 0) 0%, rgba(11, 13, 18, 0.5) 40%, rgba(11, 13, 18, 0.72) 100%);
+  background: linear-gradient(rgba(11, 13, 18, 0) 0%, rgba(11, 13, 18, 0.68) 40%, rgba(11, 13, 18, 0.85) 100%);
 }
 .strip-open .mover.kb { -webkit-animation-play-state: paused; animation-play-state: paused; }
 .strip-open #caption, .strip-open #photo-info, .strip-open #clock { opacity: 0; }
