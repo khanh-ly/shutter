@@ -565,11 +565,56 @@
     // Place the track at once, without sliding there from wherever it was last time.
     var track = $('filmstrip-track');
     track.style.webkitTransition = track.style.transition = 'none';
+    paintStripFrost();
     paintStrip();
     void track.offsetWidth;
     track.style.webkitTransition = track.style.transition = '';
     document.body.classList.add('strip-open');
     stripTouched();
+  }
+
+  /*
+   * Paints the frost: the part of the screen behind the strip (the backdrop, then the photo
+   * where it is right now, pan and zoom included), drawn small and blurred like the album
+   * header's frost, with its top edge faded out.
+   */
+  function paintStripFrost() {
+    var canvas = $('filmstrip-frost');
+    var strip = $('filmstrip');
+    var slide = slides[active];
+    var img = slide.querySelector('.photo');
+    var sw = window.innerWidth, sh = window.innerHeight;
+    var top = sh - strip.offsetHeight;
+    var ctx = canvas.getContext('2d');
+    var canFilter = 'filter' in ctx;
+    var k = canFilter ? 4 : 16; // screen px per canvas px; without filters, stretching blurs
+    canvas.width = Math.ceil(sw / k);
+    canvas.height = Math.ceil(strip.offsetHeight / k);
+    ctx.setTransform(1 / k, 0, 0, 1 / k, 0, -top / k);
+    ctx.fillStyle = '#000';
+    ctx.fillRect(0, top, sw, sh - top);
+    if (canFilter) ctx.filter = 'blur(3px)';
+    var bg = slide.querySelector('.bg');
+    if (bg.offsetWidth) ctx.drawImage(bg, 0, 0, sw, sh);
+    if (img && img.naturalWidth) {
+      // Where object-fit puts the photo inside its (moved and scaled) box.
+      var r = img.getBoundingClientRect();
+      var iw = img.naturalWidth, ih = img.naturalHeight;
+      var cover = settings.fit === 'cover' && !slide.classList.contains('portrait');
+      var scale = cover ? Math.max(r.width / iw, r.height / ih) : Math.min(r.width / iw, r.height / ih);
+      var dw = iw * scale, dh = ih * scale;
+      ctx.drawImage(img, r.left + (r.width - dw) / 2, r.top + (r.height - dh) / 2, dw, dh);
+    }
+    ctx.filter = 'none';
+    ctx.setTransform(1, 0, 0, 1, 0, 0);
+    // Fade the top edge out in the pixels (more dependable on the TV than a CSS mask).
+    var fade = ctx.createLinearGradient(0, 0, 0, canvas.height);
+    fade.addColorStop(0, 'rgba(0, 0, 0, 0)');
+    fade.addColorStop(0.35, '#000');
+    ctx.globalCompositeOperation = 'destination-in';
+    ctx.fillStyle = fade;
+    ctx.fillRect(0, 0, canvas.width, canvas.height);
+    ctx.globalCompositeOperation = 'source-over';
   }
 
   function closeStrip() {
