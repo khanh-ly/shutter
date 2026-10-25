@@ -16,7 +16,7 @@
 </table>
 
 A Samsung TV (Tizen) app that plays a slideshow of your **Synology Photos** library:
-all your photos, a single album, or Shared Space, with crossfades, a slow pan and zoom,
+all your photos, your favorites, a single album, or Shared Space, with crossfades, a slow pan and zoom,
 the date each photo was taken, and a clock.
 
 > **About Art Mode:** Samsung doesn't let third-party apps draw in the Frame's Art Mode.

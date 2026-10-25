@@ -1,6 +1,6 @@
 /*
- * Album browser: large rounded covers for "All my photos", Shared Space and every
- * album the account can see, each with a frosted label, under a frosted header with
+ * Album browser: large rounded covers for Favorites, every album the account can see
+ * and Shared Space, each with a frosted label, under a frosted header with
  * the title and a Settings button at the top right. Arrow keys move, OK plays,
  * Back closes; ▲ from the top row reaches Settings.
  */
@@ -194,8 +194,8 @@
     root.classList.add('enter');
   };
 
-  function signature(albums, shared) {
-    return JSON.stringify([shared, albums.map(function (a) {
+  function signature(albums, shared, favorites) {
+    return JSON.stringify([shared, favorites, albums.map(function (a) {
       return [a.id, a.name, a.count, a.endTime, a.cover && a.cover.cacheKey];
     })]);
   }
@@ -231,18 +231,19 @@
     }
 
     // Fetch the album list (again): build the grid, or rebuild it only if it changed.
-    Promise.all([client.listAlbums(), client.hasSharedSpace()]).then(function (res) {
+    Promise.all([client.listAlbums(), client.hasSharedSpace(), client.hasFavorites()]).then(function (res) {
       if (token !== self.loadToken) return;
       self.loading.classList.add('hidden');
       var albums = res[0];
-      var sig = signature(albums, res[1]);
+      var sig = signature(albums, res[1], res[2]);
       self.cacheKey = key;
       self.cacheTime = Date.now();
       if (sig === self.signature) return; // unchanged: keep what's on screen
       self.signature = sig;
-      // Albums first (newest first, as listAlbums returns them), then Shared Space,
-      // and "All my photos" last.
+      // Favorites first, then the albums (newest first, as listAlbums returns them),
+      // then Shared Space. "All my photos" is only in Settings.
       var tiles = [];
+      if (res[2]) tiles.push({ title: 'Favorites', pick: { source: 'favorites' }, source: { type: 'favorites' } });
       albums.forEach(function (a) {
         tiles.push({
           title: a.name,
@@ -253,7 +254,6 @@
         });
       });
       if (res[1]) tiles.push({ title: 'Shared Space', pick: { source: 'shared' }, source: { type: 'shared' } });
-      tiles.push({ title: 'All my photos', pick: { source: 'personal' }, source: { type: 'personal' } });
       self.status.textContent = albums.length ? '' : 'No albums are shared with this account yet.';
       self.render(tiles, self.current);
       self._playEntrance();
@@ -391,7 +391,7 @@
       }, function () { done(t); });
     }
 
-    // A remembered cover for "All my photos" or Shared Space may be out of date: once
+    // A remembered cover for Favorites or Shared Space may be out of date: once
     // everything is shown, look up the current cover photo and repaint if it changed.
     function check(t) {
       self.client.coverPhoto(t.source).then(function (photo) {

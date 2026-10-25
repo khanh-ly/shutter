@@ -8,7 +8,7 @@ window.SYNFRAME_DEFAULTS = {
   account: '',         // DSM username (a dedicated, read-only user is recommended)
   password: '',        // don't commit a real password
 
-  source: 'personal',  // 'personal' (all my photos) | 'album' | 'shared' (Shared Space)
+  source: 'personal',  // 'personal' (all my photos) | 'favorites' | 'album' | 'shared' (Shared Space)
   albumId: '',
   albumName: '',
   albumPassphrase: '',

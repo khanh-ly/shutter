@@ -201,6 +201,11 @@ class Handler(http.server.SimpleHTTPRequestHandler):
                 src = TEAM if "Team" in api else PERSONAL
             return self.json({"success": True, "data": {"list": src[offset:offset + limit]}})
 
+        if api == "SYNO.Foto.Favorite" and method == "list":
+            # Every sixth personal photo is a favorite.
+            offset, limit = int(q.get("offset", 0)), int(q.get("limit", 100))
+            return self.json({"success": True, "data": {"list": PERSONAL[::6][offset:offset + limit]}})
+
         if api in ("SYNO.Foto.Browse.Item", "SYNO.FotoTeam.Browse.Item") and method == "get":
             ids = json.loads(q.get("id", "[]"))
             lst = []

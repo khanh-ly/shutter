@@ -647,6 +647,7 @@
   function describeSource(s) {
     if (s.source === 'album') return s.albumName || 'Album';
     if (s.source === 'shared') return 'Shared Space';
+    if (s.source === 'favorites') return 'Favorites';
     return '';
   }
 
@@ -733,7 +734,9 @@
   // Takes a newer list (the full one, or a refresh) without interrupting the slideshow:
   // the photo on screen keeps its place, and new photos join the order.
   function adoptList(list) {
-    var cur = currentPhoto;
+    // The photo on show, or the one still loading to be shown (the first photo, when
+    // the full list comes in before it's on screen).
+    var cur = currentPhoto || (pos >= 0 && photos[order[pos]]) || null;
     photos = list;
     buildOrder();
     pos = -1;

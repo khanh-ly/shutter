@@ -119,6 +119,7 @@
       { cat: 'account', key: 'connect', label: 'Connect & load albums', type: 'button', action: this.connect.bind(this) },
       { cat: 'photos', key: 'source', label: 'Show photos from', type: 'choice', options: [
         { value: 'personal', label: 'All my photos' },
+        { value: 'favorites', label: 'Favorites' },
         { value: 'album', label: 'One album' },
         { value: 'shared', label: 'Shared Space' }
       ] },

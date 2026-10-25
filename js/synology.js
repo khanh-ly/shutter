@@ -227,7 +227,7 @@
   };
 
   /*
-   * source: { type: 'personal' | 'album' | 'shared', albumId, passphrase }
+   * source: { type: 'personal' | 'favorites' | 'album' | 'shared', albumId, passphrase }
    * Returns a flat list of photos (videos are skipped).
    */
   /*
@@ -237,6 +237,11 @@
    * error 120 to album_id + passphrase for an owner's shared album.
    */
   function sourceParams(source) {
+    if (source.type === 'favorites') {
+      // The photos marked as favorites (the heart) in the personal space. Shared Space
+      // has no favorites API.
+      return [{ api: 'SYNO.Foto.Favorite', version: 1, method: 'list', additional: '["thumbnail","resolution"]' }];
+    }
     var base = {
       api: source.type === 'shared' ? 'SYNO.FotoTeam.Browse.Item' : 'SYNO.Foto.Browse.Item',
       version: 1, method: 'list',
@@ -350,6 +355,12 @@
         place: [addr.landmark, town, addr.country].filter(Boolean).join(', ')
       };
     });
+  };
+
+  // Whether this Synology Photos has favorites (older versions don't).
+  SynologyClient.prototype.hasFavorites = function () {
+    return this._firstAccepted(sourceParams({ type: 'favorites' }), { offset: 0, limit: 1 })
+      .then(function () { return true; }, function () { return false; });
   };
 
   // Whether this account can use Shared Space (it may be turned off, or not shared with the account).
