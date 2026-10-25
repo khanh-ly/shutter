@@ -322,6 +322,36 @@
     });
   };
 
+  /*
+   * Camera and place of one photo, for the details panel: { camera, lens, exposure, place }
+   * (any may be ''). Not part of the photo list, which stays small; asked for on demand.
+   */
+  SynologyClient.prototype.photoDetails = function (photo) {
+    return this.request({
+      api: photo.team ? 'SYNO.FotoTeam.Browse.Item' : 'SYNO.Foto.Browse.Item',
+      version: 1, method: 'get', id: '[' + photo.id + ']',
+      additional: '["exif","address"]', passphrase: photo.passphrase
+    }).then(function (data) {
+      var it = (data.list || [])[0] || {};
+      var exif = (it.additional && it.additional.exif) || {};
+      var addr = (it.additional && it.additional.address) || {};
+      var aperture = String(exif.aperture || '');
+      if (/^[\d.]+$/.test(aperture)) aperture = 'ƒ/' + aperture;
+      var focal = String(exif.focal_length || '');
+      if (/^[\d.]+$/.test(focal)) focal += ' mm';
+      var shutter = String(exif.exposure_time || '');
+      if (/^[\d./]+$/.test(shutter)) shutter += ' s';
+      var iso = exif.iso ? 'ISO ' + String(exif.iso).replace(/^ISO\s*/i, '') : '';
+      var town = addr.city || addr.town || addr.village || addr.county || addr.state || '';
+      return {
+        camera: exif.camera || '',
+        lens: exif.lens || '',
+        exposure: [aperture, shutter, focal, iso].filter(Boolean).join(' · '),
+        place: [addr.landmark, town, addr.country].filter(Boolean).join(', ')
+      };
+    });
+  };
+
   // Whether this account can use Shared Space (it may be turned off, or not shared with the account).
   SynologyClient.prototype.hasSharedSpace = function () {
     return this.request({ api: 'SYNO.FotoTeam.Browse.Item', version: 1, method: 'list', offset: 0, limit: 1 })

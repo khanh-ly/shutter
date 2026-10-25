@@ -170,10 +170,10 @@ C:\tizen-studio\tools\ide\bin\tizen.bat install -n Shutter.wgt -- .buildResult
 | --- | --- |
 | ◀ ▶ / ⏪ ⏩ | Previous / next photo |
 | OK / ⏯ | Pause / resume |
-| ▲ / Info | Photo details: date and time taken, album, file name and size, position (▲ or Back closes; closes itself after 8 s) |
-| ▼ | Albums: browse covers, OK to play one; ▲ from the top row reaches Settings (top right) |
+| ▲ | Film strip: ◀ ▶ run through the slideshow's photos, OK shows the one picked (▲, ▼ or Back closes; the slideshow waits while it's open) |
+| ▼ / Info | Photo details: date and time taken, place, album, camera and exposure, file name and size, position (▼ or Back closes; closes itself after 8 s) |
 | Color keys | Settings |
-| Back | Slideshow: open Albums (closes photo info first). Albums: asks "Exit?" (Cancel is selected; Back cancels); OK on the *Playing* album returns to the slideshow. Settings: back to the categories, then to the album grid |
+| Back | Slideshow: open Albums (closes the film strip or photo details first); OK on an album plays it, ▲ from the top row reaches Settings (top right). In Albums: asks "Exit?" (Cancel is selected; Back cancels); OK on the *Playing* album returns to the slideshow. Settings: back to the categories, then to the album grid |
 
 On the settings screen, use ▲▼ to move, ◀▶ to change a choice, and OK to type into a field.
 Choose **Connect & load albums** to check your sign-in and list your albums.

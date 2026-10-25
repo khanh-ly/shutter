@@ -91,7 +91,7 @@ html, body {
 }
 .show-info #caption, .show-clock #clock { opacity: 0.92; }
 
-/* Photo details (▲ / Info). The caption makes way for it; the clock shows even if it's off. */
+/* Photo details (▼ / Info). The caption makes way for it; the clock shows even if it's off. */
 #photo-info {
   position: absolute;
   left: 72px; bottom: 56px;
@@ -112,9 +112,67 @@ html, body {
 .info-open #caption { opacity: 0; }
 .info-open #clock { opacity: 0.92; }
 #info-date { font-size: 38px; font-weight: 400; }
-#info-source { font-size: 30px; margin-top: 8px; }
+#info-place, #info-source { font-size: 30px; margin-top: 8px; }
+#info-camera, #info-exposure { font-size: 26px; opacity: 0.85; margin-top: 6px; }
+#info-camera { margin-top: 16px; }
 #info-file, #info-position { font-size: 26px; opacity: 0.7; margin-top: 6px; }
-#info-source:empty, #info-file:empty { display: none; }
+#info-place:empty, #info-source:empty, #info-camera:empty, #info-exposure:empty, #info-file:empty { display: none; }
+
+/*
+ * Film strip (▲). Tiles sit at fixed places on the track (left = index × pitch, set in
+ * app.js); moving the selection slides the whole track with a CSS transition.
+ */
+#filmstrip {
+  position: absolute;
+  left: 0; right: 0; bottom: 0;
+  height: 380px;
+  background: linear-gradient(rgba(0, 0, 0, 0), rgba(0, 0, 0, 0.82) 45%);
+  opacity: 0;
+  -webkit-transform: translateY(40px);
+  transform: translateY(40px);
+  -webkit-transition: opacity 0.3s, -webkit-transform 0.3s;
+  transition: opacity 0.3s, transform 0.3s;
+  pointer-events: none;
+}
+.strip-open #filmstrip { opacity: 1; -webkit-transform: none; transform: none; }
+.strip-open #caption, .strip-open #photo-info, .strip-open #clock { opacity: 0; }
+#filmstrip-label {
+  position: absolute;
+  left: 72px; right: 72px; top: 70px;
+  display: -webkit-flex;
+  display: flex;
+  -webkit-justify-content: space-between;
+  justify-content: space-between;
+  font-size: 30px;
+  text-shadow: 0 2px 10px rgba(0, 0, 0, 0.7);
+}
+#filmstrip-count { opacity: 0.7; }
+#filmstrip-track {
+  position: absolute;
+  left: 50%; top: 150px;
+  height: 160px;
+  -webkit-transition: -webkit-transform 0.25s ease-out;
+  transition: transform 0.25s ease-out;
+}
+.strip-tile {
+  position: absolute;
+  top: 0;
+  width: 240px; height: 160px;
+  border-radius: 10px;
+  background: rgba(255, 255, 255, 0.08);
+  object-fit: cover;
+  opacity: 0.6;
+  -webkit-transition: opacity 0.2s, -webkit-transform 0.2s, box-shadow 0.2s;
+  transition: opacity 0.2s, transform 0.2s, box-shadow 0.2s;
+}
+.strip-tile.selected {
+  opacity: 1;
+  -webkit-transform: scale(1.18);
+  transform: scale(1.18);
+  box-shadow: 0 0 0 4px #fff, 0 14px 40px rgba(0, 0, 0, 0.7);
+  z-index: 1;
+}
+.strip-tile.current:not(.selected) { opacity: 0.95; box-shadow: 0 0 0 3px rgba(255, 255, 255, 0.45); }
 
 #caption-date { font-size: 34px; font-weight: 300; }
 #caption-sub { font-size: 26px; font-weight: 300; opacity: 0.75; margin-top: 6px; }

@@ -14,7 +14,7 @@
     document.dispatchEvent(new KeyboardEvent('keydown', { keyCode: code, bubbles: true }));
   }
   setTimeout(function () {
-    if (shot === 'albums') key(40);
+    if (shot === 'albums') key(10009); // Back: the album grid
     if (shot === 'settings') {
       key(403); // red button: settings
       setTimeout(function () { key(40); key(40); key(39); }, 300); // Slideshow, into its options

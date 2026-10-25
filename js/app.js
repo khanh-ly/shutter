@@ -235,6 +235,7 @@
   }
 
   function buildOrder() {
+    resetStrip();
     if (settings.order === 'shuffle') {
       order = shuffled(photos.length);
     } else {
@@ -273,7 +274,8 @@
 
   function schedule() {
     clearTimeout(timer);
-    if (!paused) timer = setTimeout(function () { show(1); }, settings.interval * 1000);
+    // Not while the film strip is open: closing it picks the timing up again.
+    if (!paused && !stripOpen()) timer = setTimeout(function () { show(1); }, settings.interval * 1000);
   }
 
   // Decoding a large photo takes the TV well over a second, so photos are decoded before
@@ -364,7 +366,7 @@
     function failed() {
       failures++;
       if (failures >= 5) {
-        showMessage('Having trouble loading photos', 'Retrying… Press ▼ for albums and settings.');
+        showMessage('Having trouble loading photos', 'Retrying… Press Back for albums and settings.');
       }
       // A failed image is often an expired session; ping re-signs in if so.
       // Then retry the same photo once, then (for originals, e.g. HEIC the TV
@@ -491,12 +493,32 @@
     }
   }
 
-  // ---------- photo info (▲ / Info) ----------
+  // ---------- photo info (▼ / Info) ----------
+
+  // Camera and place per photo id, asked of the NAS the first time a photo's details open.
+  var details = {};
+
+  function loadDetails(p) {
+    if (details[p.id]) return;
+    details[p.id] = { pending: true };
+    client.photoDetails(p).then(function (d) {
+      details[p.id] = d;
+    }, function () {
+      delete details[p.id]; // try again next time
+    }).then(function () {
+      if (infoOpen() && currentPhoto === p) fillInfo();
+    });
+  }
 
   function fillInfo() {
     var p = currentPhoto;
     if (!p) return;
+    loadDetails(p);
+    var d = details[p.id] || {};
     $('info-date').textContent = formatTakenFull(p.time);
+    $('info-place').textContent = d.place || '';
+    $('info-camera').textContent = [d.camera, d.lens].filter(Boolean).join(' \u00b7 ');
+    $('info-exposure').textContent = d.exposure || '';
     $('info-source').textContent = sourceLabel || (settings.source === 'shared' ? 'Shared Space' : 'All my photos');
     var size = p.width && p.height ? p.width + ' \u00d7 ' + p.height : '';
     $('info-file').textContent = [p.name, size].filter(Boolean).join(' \u00b7 ');
@@ -516,6 +538,110 @@
   function hideInfo() {
     clearTimeout(infoTimer);
     document.body.classList.remove('info-open');
+  }
+
+  // ---------- film strip (▲) ----------
+
+  /*
+   * Thumbnails of the slideshow's order around the photo on show. ◀ ▶ move the selection
+   * (the track slides; the photo on show stays), OK shows the selected photo, and ▲, ▼ or
+   * Back close it. The slideshow waits while it's open. Only the tiles near the selection
+   * exist, so a library of thousands costs a few dozen small images.
+   */
+  var STRIP_PITCH = 270;    // px from one tile to the next (240 wide + gap)
+  var STRIP_REACH = 8;      // tiles kept either side of the selection
+  var STRIP_MS = 20000;     // closes itself after this long without a key
+  var stripSel = 0;         // index into order
+  var stripTiles = {};      // order index -> <img>
+  var stripTimer = null;
+
+  function stripOpen() { return document.body.classList.contains('strip-open'); }
+
+  function openStrip() {
+    if (!currentPhoto || !order.length) return;
+    hideInfo();
+    clearTimeout(timer);
+    stripSel = Math.max(0, Math.min(pos, order.length - 1));
+    // Place the track at once, without sliding there from wherever it was last time.
+    var track = $('filmstrip-track');
+    track.style.webkitTransition = track.style.transition = 'none';
+    paintStrip();
+    void track.offsetWidth;
+    track.style.webkitTransition = track.style.transition = '';
+    document.body.classList.add('strip-open');
+    stripTouched();
+  }
+
+  function closeStrip() {
+    if (!stripOpen()) return;
+    clearTimeout(stripTimer);
+    document.body.classList.remove('strip-open');
+    schedule();
+  }
+
+  function stripTouched() {
+    clearTimeout(stripTimer);
+    stripTimer = setTimeout(closeStrip, STRIP_MS);
+  }
+
+  function paintStrip() {
+    var track = $('filmstrip-track');
+    var lo = Math.max(0, stripSel - STRIP_REACH), hi = Math.min(order.length - 1, stripSel + STRIP_REACH);
+    Object.keys(stripTiles).forEach(function (k) {
+      if (k < lo || k > hi) {
+        track.removeChild(stripTiles[k]);
+        delete stripTiles[k];
+      }
+    });
+    for (var i = lo; i <= hi; i++) {
+      var tile = stripTiles[i];
+      if (!tile) {
+        tile = stripTiles[i] = new Image();
+        tile.alt = '';
+        tile.style.left = (i * STRIP_PITCH) + 'px';
+        tile.src = client.thumbnailUrl(photos[order[i]], 'sm');
+        track.appendChild(tile);
+      }
+      tile.className = 'strip-tile' + (i === stripSel ? ' selected' : '') + (i === pos ? ' current' : '');
+    }
+    var x = -(stripSel * STRIP_PITCH + 120);
+    track.style.webkitTransform = track.style.transform = 'translateX(' + x + 'px)';
+    var photo = photos[order[stripSel]];
+    $('filmstrip-date').textContent = datesReady ? formatTaken(photo.time) : '';
+    $('filmstrip-count').textContent = (stripSel + 1) + ' of ' + order.length;
+  }
+
+  // The order changed under the strip (a new list, a reshuffle): start it afresh.
+  function resetStrip() {
+    var track = $('filmstrip-track');
+    while (track.firstChild) track.removeChild(track.firstChild);
+    stripTiles = {};
+    closeStrip();
+  }
+
+  function stripKey(e) {
+    switch (e.keyCode) {
+      case KEY.RIGHT: case KEY.FF:
+        if (stripSel < order.length - 1) { stripSel++; paintStrip(); }
+        break;
+      case KEY.LEFT: case KEY.RW:
+        if (stripSel > 0) { stripSel--; paintStrip(); }
+        break;
+      case KEY.ENTER:
+        var pick = stripSel;
+        closeStrip();
+        if (pick !== pos) {
+          pos = pick - 1;
+          show(1);
+        }
+        break;
+      case KEY.UP: case KEY.DOWN: case KEY.BACK: case KEY.ESC:
+        closeStrip();
+        break;
+      default: return;
+    }
+    stripTouched();
+    e.preventDefault();
   }
 
   function describeSource(s) {
@@ -632,6 +758,7 @@
     slides.forEach(function (el) { el.style.webkitTransition = el.style.transition = ''; });
     $('caption-date').textContent = $('caption-sub').textContent = '';
     currentPhoto = null;
+    closeStrip();
   }
 
   function start(newSettings) {
@@ -690,7 +817,7 @@
         clearStage();
         started = false;
         photos = [];
-        showMessage('No photos found', 'There are no photos in ' + where + '. Press ▼ to choose another album.');
+        showMessage('No photos found', 'There are no photos in ' + where + '. Press Back to choose another album.');
         retryTimer = setTimeout(function () { start(settings); }, RETRY_MS * 5);
         return;
       }
@@ -709,7 +836,7 @@
         // Not a fault: the NAS is overloaded for now (indexing, updating…). Just wait.
         showMessage('Waiting for your Synology', 'It\'s busy and not answering right now. Shutter will try again in a minute.');
       } else {
-        showMessage('Could not load photos', (err.message || String(err)) + '\nRetrying in a minute. Press ▼ for albums and settings.');
+        showMessage('Could not load photos', (err.message || String(err)) + '\nRetrying in a minute. Press Back for albums and settings.');
       }
       retryTimer = setTimeout(function () { start(settings); }, RETRY_MS);
     });
@@ -842,17 +969,22 @@
       albumBrowser.handleKey(e);
       return;
     }
+    if (stripOpen()) {
+      stripKey(e);
+      return;
+    }
     switch (e.keyCode) {
       case KEY.RIGHT: case KEY.FF: show(1); break;
       case KEY.LEFT: case KEY.RW: show(-1); break;
       case KEY.ENTER: case KEY.PLAY_PAUSE: case KEY.PLAY: case KEY.PAUSE: togglePause(); break;
-      case KEY.UP: case KEY.INFO:
+      case KEY.UP: openStrip(); break;
+      case KEY.DOWN: case KEY.INFO:
         if (infoOpen()) hideInfo();
-        else showInfo();
+        else if (currentPhoto) showInfo();
+        else openAlbums(); // nothing on show (an error, no photos): the albums instead
         break;
-      case KEY.DOWN: openAlbums(); break;
       case KEY.RED: case KEY.GREEN: case KEY.YELLOW: case KEY.BLUE: openSettings(); break;
-      case KEY.BACK:
+      case KEY.BACK: case KEY.ESC:
         if (infoOpen()) hideInfo();
         else openAlbums();
         break;

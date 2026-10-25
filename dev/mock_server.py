@@ -201,6 +201,25 @@ class Handler(http.server.SimpleHTTPRequestHandler):
                 src = TEAM if "Team" in api else PERSONAL
             return self.json({"success": True, "data": {"list": src[offset:offset + limit]}})
 
+        if api in ("SYNO.Foto.Browse.Item", "SYNO.FotoTeam.Browse.Item") and method == "get":
+            ids = json.loads(q.get("id", "[]"))
+            lst = []
+            for pid in ids:
+                it = BY_ID.get(pid)
+                if it is None:
+                    continue
+                # Every fifth photo has no location, every seventh no camera (like scans).
+                extra = {}
+                if pid % 7:
+                    extra["exif"] = {"camera": "FUJIFILM X100V", "lens": "23mm F2",
+                                     "aperture": "2.8", "exposure_time": "1/250", "focal_length": "23",
+                                     "iso": 200 + pid % 4 * 200}
+                if pid % 5:
+                    extra["address"] = {"country": "Portugal", "city": "Lisbon",
+                                        "landmark": "Miradouro da Gra\u00e7a" if pid % 3 == 0 else ""}
+                lst.append(dict(it, additional=dict(it["additional"], **extra)))
+            return self.json({"success": True, "data": {"list": lst}})
+
         if api in ("SYNO.Foto.Thumbnail", "SYNO.FotoTeam.Thumbnail"):
             if int(q.get("id", 0)) not in BY_ID:
                 return self.json({"success": False, "error": {"code": 803}})
