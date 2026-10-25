@@ -293,6 +293,12 @@ Photos in the screenshots are from [Unsplash](https://unsplash.com), used under 
 - [Hong Kong neon in the rain](https://unsplash.com/photos/DdQkVaQbSsg) by Nic Low
 - [Espresso portafilter](https://unsplash.com/photos/pRzbLPQOnwM) by Marko Alpner
 - [Making coffee](https://unsplash.com/photos/QfTpbOey94s) by Pete Willis
+- [People walking on a concrete floor](https://unsplash.com/photos/ABGaVhJxwDQ) by Timon Studler
+- [Shibuya Crossing](https://unsplash.com/photos/IBaVuZsJJTo) by Ryoji Iwata
+- [People on a pedestrian crossing](https://unsplash.com/photos/PMxT0XtQ--A) by Jacek Dylag
+- [Crowd on a street at sunset](https://unsplash.com/photos/XCy9Ah0mSWA) by Kirill Fokin
+- [Busy street](https://unsplash.com/photos/KbR06h9dNQw) by Jezael Melgoza
+- [People crossing a street](https://unsplash.com/photos/9_C0iq8C0oY) by Jesus Kiteque
 
 The Settings cog icon is from [Material Design Icons](https://github.com/google/material-design-icons) by Google, Apache License 2.0.
 

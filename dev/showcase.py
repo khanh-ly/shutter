@@ -45,6 +45,19 @@ PHOTOS = {
                  "https://unsplash.com/photos/pRzbLPQOnwM"),
     "making-coffee": ("photo-1579265898841-79c7890d69cf", "Pete Willis",
                       "https://unsplash.com/photos/QfTpbOey94s"),
+    # City people, for the film strip screenshot.
+    "city-walkway": ("photo-1454923634634-bd1614719a7b", "Timon Studler",
+                     "https://unsplash.com/photos/ABGaVhJxwDQ"),
+    "shibuya-crossing": ("photo-1528642474498-1af0c17fd8c3", "Ryoji Iwata",
+                         "https://unsplash.com/photos/IBaVuZsJJTo"),
+    "pedestrian-lane": ("photo-1517732306149-e8f829eb588a", "Jacek Dylag",
+                        "https://unsplash.com/photos/PMxT0XtQ--A"),
+    "sunset-street": ("photo-1713217130346-1629ca151547", "Kirill Fokin",
+                      "https://unsplash.com/photos/XCy9Ah0mSWA"),
+    "busy-street": ("photo-1493794179168-82ca7cb00437", "Jezael Melgoza",
+                    "https://unsplash.com/photos/KbR06h9dNQw"),
+    "crossing": ("photo-1518890714631-19d0b2fed537", "Jesus Kiteque",
+                 "https://unsplash.com/photos/9_C0iq8C0oY"),
 }
 
 
@@ -83,7 +96,12 @@ ALBUM_DEFS = [
     ("Espresso", ["forest", "autumn"], 2025, 10, 41, ["espresso"]),
     ("Hong Kong in the Rain", ["aurora", "lake"], 2025, 6, 77, ["hong-kong-rain"]),
     ("Latte Art Practice", ["autumn", "forest"], 2025, 4, 29, ["making-coffee"]),
+    # Played in the film strip screenshot. Old, so it sits at the end of the album grid
+    # (off the album grid screenshot).
+    ("City Streets", ["lake"], 2023, 5, 36,
+     ["city-walkway", "shibuya-crossing", "pedestrian-lane", "sunset-street", "busy-street", "crossing"]),
 ]
+FILMSTRIP_ALBUM = "City Streets"
 
 PALETTES = {
     # sky top, sky middle, horizon, sun

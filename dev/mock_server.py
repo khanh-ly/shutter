@@ -275,17 +275,26 @@ class Handler(http.server.SimpleHTTPRequestHandler):
         self.end_headers()
         self.wfile.write(body)
 
+    def filmstrip_album(self):
+        import showcase
+        album = next(a for a in ALBUMS if a["name"] == showcase.FILMSTRIP_ALBUM)
+        return album["id"], album["name"]
+
     def showcase_page(self, path):
         if path == "/js/config.js":
             with open(os.path.join(ROOT, "js", "config.js")) as f:
                 body = f.read() + """
-// --showcase: sign in to this mock and play the newest demo album.
+// --showcase: sign in to this mock and play the newest demo album (for the film strip
+// screenshot, the album of city people).
 Object.assign(window.SYNFRAME_DEFAULTS, {
   server: location.origin, account: 'demo', password: 'demo',
   source: 'album', albumId: '21', albumName: 'Iceland Ring Road',
   order: 'newest', interval: 30, motion: false
 });
-"""
+if (location.hash === '#filmstrip') {
+  Object.assign(window.SYNFRAME_DEFAULTS, { albumId: '%s', albumName: '%s' });
+}
+""" % self.filmstrip_album()
             ctype = "application/javascript"
         else:
             with open(os.path.join(ROOT, "index.html")) as f:

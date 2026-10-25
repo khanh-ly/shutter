@@ -15,7 +15,7 @@ capture() { # out.png, url, width, height
   local profile
   profile=$(mktemp -d) # a fresh profile each time: nothing remembered from earlier runs
   "$CHROME" --headless=new --hide-scrollbars --window-size="$3,$4" --force-device-scale-factor=1 \
-    --allow-file-access-from-files --user-data-dir="$profile" --virtual-time-budget=9000 \
+    --allow-file-access-from-files --user-data-dir="$profile" --virtual-time-budget=15000 \
     --screenshot="$1" "$2" >/dev/null 2>&1
   rm -rf "$profile"
   echo "$1"

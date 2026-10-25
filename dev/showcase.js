@@ -11,6 +11,10 @@
   var style = document.createElement('style');
   style.textContent = '*, *::before, *::after { transition: none !important; animation: none !important; }';
   document.head.appendChild(style);
+  // Under headless Chrome's virtual clock, img.decode() only settles when a frame is drawn,
+  // so a photo could reach the screen too late for the keys below. Decoding ahead only
+  // matters for smooth fades on the TV.
+  HTMLImageElement.prototype.decode = function () { return Promise.resolve(); };
   function key(code) {
     document.dispatchEvent(new KeyboardEvent('keydown', { keyCode: code, bubbles: true }));
   }
