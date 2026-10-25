@@ -277,9 +277,10 @@ def build(start_id=20000):
             scene_of[pid] = scene
             if n == 0 and i == 0:
                 photo_of[pid] = "vestrahorn"  # the slideshow screenshot
-            elif i == 1 or len(photos) == 1:
+            elif n == 0 and i == 1:
                 photo_of[pid] = photos[0]  # the album's cover (item 1)
             else:
+                # In turn, so neighbours in the film strip differ (item 1 is the cover).
                 photo_of[pid] = photos[i % len(photos)]
             if pid in photo_of:
                 w, h = 4032, 2268  # the photos are fetched at 16:9
