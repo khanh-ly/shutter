@@ -202,7 +202,7 @@ class Handler(http.server.SimpleHTTPRequestHandler):
             return self.json({"success": True, "data": {"list": src[offset:offset + limit]}})
 
         if api == "SYNO.Foto.Browse.Item" and method == "list_with_filter" and q.get("favorite") == "true":
-            # Every sixth personal photo is a favorite.
+            # Every sixth personal photo is a favorite, starting with the newest.
             offset, limit = int(q.get("offset", 0)), int(q.get("limit", 100))
             return self.json({"success": True, "data": {"list": PERSONAL[::6][offset:offset + limit]}})
 

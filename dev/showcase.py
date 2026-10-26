@@ -45,6 +45,9 @@ PHOTOS = {
                  "https://unsplash.com/photos/pRzbLPQOnwM"),
     "making-coffee": ("photo-1579265898841-79c7890d69cf", "Pete Willis",
                       "https://unsplash.com/photos/QfTpbOey94s"),
+    # The newest photo, in no album: the first favorite, so the Favorites cover.
+    "mountain-road": ("photo-1779744706434-c911a312359c", "Adrian Schledorn",
+                      "https://unsplash.com/photos/_JfxcCWBlAY"),
     # City people, for the film strip screenshot.
     "city-walkway": ("photo-1454923634634-bd1614719a7b", "Timon Studler",
                      "https://unsplash.com/photos/ABGaVhJxwDQ"),
@@ -298,6 +301,20 @@ def build(start_id=20000):
             pid += 1
         albums.append({"id": 21 + n, "name": name, "items": items, "cover_index": 1})
         everything.extend(items)
+    # The newest photo of all, in no album. The mock's favorites start with the newest
+    # photo, so this is the Favorites cover.
+    scene_of[pid], photo_of[pid] = "alpine", "mountain-road"
+    everything.append({
+        "id": pid,
+        "filename": "IMG_%04d.jpg" % (pid % 10000),
+        "time": max(it["time"] for it in everything) + 86400,
+        "type": "photo",
+        "additional": {
+            "thumbnail": {"cache_key": "%d_%d" % (pid, 1700000000), "unit_id": pid,
+                          "sm": "ready", "m": "ready", "xl": "ready", "preview": "broken"},
+            "resolution": {"width": 4032, "height": 2268},
+        },
+    })
     everything.sort(key=lambda it: -it["time"])
     return albums, everything, scene_of, photo_of
 
